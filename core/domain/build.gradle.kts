@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "io.github.carlosquijano.minimal.clean.domain"
+    namespace = "mobi.kairos.android.domain"
     compileSdk = 36
     defaultConfig { minSdk = 23 }
 }
