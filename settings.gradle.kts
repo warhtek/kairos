@@ -23,4 +23,5 @@ dependencyResolutionManagement {
 }
 
 include(":core:domain", ":core:data")
+include(":ui:common", ":ui:home")
 include(":androidApp")

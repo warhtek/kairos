@@ -1,13 +1,14 @@
 plugins {
-    alias(libs.plugins.android.application)
+    alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
     alias(libs.plugins.kover)
 }
 
 android {
-    namespace = "mobi.kairos.android"
+    namespace = "mobi.kairos.android.ui.home"
     compileSdk = 36
-    defaultConfig { minSdk = 23; targetSdk = 36 }
+    defaultConfig { minSdk = 23 }
     buildFeatures { compose = true }
     buildTypes { debug { enableUnitTestCoverage = true } }
     testOptions {
@@ -18,11 +19,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":core:domain"))
-    implementation(project(":core:data"))
-    implementation(project(":ui:home"))
-    kover(project(":core:data"))
-    kover(project(":ui:home"))
+    implementation(project(":ui:common"))
     implementation(libs.koin.core)
     implementation(libs.koin.android)
     implementation(platform(libs.androidx.compose.bom))
@@ -31,4 +28,5 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.compose.ui.test)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
