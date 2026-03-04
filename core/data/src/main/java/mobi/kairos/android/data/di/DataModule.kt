@@ -8,10 +8,13 @@
  */
 package mobi.kairos.android.data.di
 
+import mobi.kairos.android.data.repository.DatabaseRepositoryImpl
+import mobi.kairos.android.di.domainModule
+import mobi.kairos.android.repository.DatabaseRepository
 import org.koin.dsl.module
 
-val roomModule = module {}
-
 val dataModule = module {
+    includes(domainModule)
     includes(roomModule)
+    single<DatabaseRepository> { DatabaseRepositoryImpl(get()) }
 }

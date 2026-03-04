@@ -11,13 +11,10 @@ package mobi.kairos.android
 import android.os.Build
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
-import mobi.kairos.android.data.di.dataModule
 import org.junit.After
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -27,16 +24,8 @@ class MainActivityTest {
     @get:Rule
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
-    @Before
-    fun setupKoin() {
-        stopKoin()
-        startKoin {
-            modules(dataModule)
-        }
-    }
-
     @After
-    fun tearDownKoin() {
+    fun tearDown() {
         stopKoin()
     }
 

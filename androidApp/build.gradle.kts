@@ -16,7 +16,30 @@ android {
         }
     }
 }
-
+kover {
+    reports {
+        filters {
+            excludes {
+                androidGeneratedClasses()
+                annotatedBy(
+                    "androidx.compose.ui.tooling.preview.Preview"
+                )
+                classes(
+                    // Room generated
+                    "*_Impl",
+                    "*_Impl\$*",
+                    "*\$DefaultImpls",
+                    "*_AutoMigration_*",
+                    // Room DAOs generated
+                    "*Dao_Impl",
+                    "*Dao_Impl\$*",
+                    // Room Database generated
+                    "*Database_Impl",
+                )
+            }
+        }
+    }
+}
 dependencies {
     implementation(project(":core:domain"))
     implementation(project(":core:data"))
