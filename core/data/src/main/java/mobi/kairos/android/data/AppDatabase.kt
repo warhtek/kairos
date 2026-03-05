@@ -14,7 +14,6 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import kotlinx.coroutines.CoroutineScope
 import mobi.kairos.android.data.dao.DatabaseInfoDao
 import mobi.kairos.android.data.entity.ContentEntity
 
@@ -34,5 +33,3 @@ internal fun databaseBuilder(context: Context, dbName: String, notifier: RoomRea
     ).fallbackToDestructiveMigration(true)
     .addCallback(notifier)
     .build()
-
-internal fun databaseReadyNotifierBuilder(scope: CoroutineScope): RoomReadyNotifier = RoomReadyNotifier(scope)

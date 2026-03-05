@@ -10,12 +10,9 @@
  */
 package mobi.kairos.android.data.di
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import mobi.kairos.android.data.AppDatabase
+import mobi.kairos.android.data.dao.DatabaseInfoDao
 import mobi.kairos.android.data.databaseBuilder
-import mobi.kairos.android.data.databaseReadyNotifierBuilder
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -25,16 +22,13 @@ private const val DB_NAME = "kairos.db"
 val roomModule =
     module {
         single(named("DB_NAME")) { DB_NAME }
-        single<CoroutineScope> { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
-        single {
-            databaseReadyNotifierBuilder(get())
-        }
-        single {
+        single<AppDatabase> {
             databaseBuilder(
                 context = androidContext(),
                 dbName = get(named("DB_NAME")),
                 notifier = get(),
             )
         }
-        single { get<AppDatabase>().databaseInfoDao() }
+
+        single<DatabaseInfoDao> { get<AppDatabase>().databaseInfoDao() }
     }

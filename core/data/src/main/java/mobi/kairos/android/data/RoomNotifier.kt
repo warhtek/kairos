@@ -30,6 +30,9 @@ class RoomReadyNotifier(private val scope: CoroutineScope) : RoomDatabase.Callba
 
     override fun onOpen(db: SupportSQLiteDatabase) {
         super.onOpen(db)
-        notifyReady()
+        scope.launch {
+            Log.d(TAG, "Room database version: ${db.version}")
+            notifyReady()
+        }
     }
 }
