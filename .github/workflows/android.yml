@@ -37,4 +37,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: coverage-report
-        path: app/build/reports/kover/htmlDebug
+        path: androidApp/build/reports/kover/htmlDebug

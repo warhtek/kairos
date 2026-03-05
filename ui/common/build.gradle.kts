@@ -28,7 +28,7 @@ kover {
                 )
                 annotatedBy(
                     "androidx.compose.runtime.Composable",
-                    "androidx.compose.ui.tooling.preview.Preview"
+                    "androidx.compose.ui.tooling.preview.Preview",
                 )
             }
         }

@@ -1,3 +1,13 @@
+/*
+ * © 2026 MOBIWARE. All rights reserved.
+ *
+ * This software and its source code are the exclusive property of MOBIWARE.
+ * Any unauthorized use, reproduction, distribution, modification, or disclosure
+ * of this software, whether in whole or in part, is strictly prohibited.
+ *
+ * Violations may result in severe civil and criminal penalties under applicable
+ * copyright, intellectual property, and trade secret laws.
+ */
 package mobi.kairos.android.data.di
 
 import kotlinx.coroutines.CoroutineScope
@@ -11,16 +21,17 @@ import org.koin.dsl.module
 
 private const val DB_NAME = "kairos.db"
 
-val roomModule = module {
-    single(named("DB_NAME")) { DB_NAME }
-    single<CoroutineScope> { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
-    single { DbInitNotifier(get()) }
-    single {
-        databaseBuilder(
-            context = androidContext(),
-            dbName = get(named("DB_NAME")),
-            nofifier = get()
-        )
+val roomModule =
+    module {
+        single(named("DB_NAME")) { DB_NAME }
+        single<CoroutineScope> { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
+        single { DbInitNotifier(get()) }
+        single {
+            databaseBuilder(
+                context = androidContext(),
+                dbName = get(named("DB_NAME")),
+                nofifier = get(),
+            )
+        }
+        single { get<AppDatabase>().databaseInfoDao() }
     }
-    single { get<AppDatabase>().databaseInfoDao() }
-}

@@ -1,3 +1,13 @@
+/*
+ * © 2026 MOBIWARE. All rights reserved.
+ *
+ * This software and its source code are the exclusive property of MOBIWARE.
+ * Any unauthorized use, reproduction, distribution, modification, or disclosure
+ * of this software, whether in whole or in part, is strictly prohibited.
+ *
+ * Violations may result in severe civil and criminal penalties under applicable
+ * copyright, intellectual property, and trade secret laws.
+ */
 package mobi.kairos.android.ui.common
 
 import androidx.compose.foundation.layout.Column
@@ -11,27 +21,22 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun Verse(
-    modifier: Modifier = Modifier,
-    title: String,
-    text: String,
-    onClick: () -> Unit,
-) {
+fun Verse(modifier: Modifier = Modifier, title: String, text: String, onClick: () -> Unit) {
     Column(
         modifier = modifier,
     ) {
         Text(
             text = title,
             style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.secondary
+            color = MaterialTheme.colorScheme.secondary,
         )
         Clickable(
-            onClick = onClick
+            onClick = onClick,
         ) {
             Text(
                 text = text,
                 style = MaterialTheme.typography.displayLarge,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }
@@ -46,7 +51,7 @@ fun VersePreview() {
             text = "Lorep Ipsum",
             onClick = {
                 // NOOP
-            }
+            },
         )
     }
 }

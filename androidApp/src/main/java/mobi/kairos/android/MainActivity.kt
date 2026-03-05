@@ -1,10 +1,12 @@
-/**
- * Copyright (C) 2026 MOBIWARE
+/*
+ * © 2026 MOBIWARE. All rights reserved.
  *
  * This software and its source code are the exclusive property of MOBIWARE.
+ * Any unauthorized use, reproduction, distribution, modification, or disclosure
+ * of this software, whether in whole or in part, is strictly prohibited.
  *
- * Any unauthorized use, copying, distribution, or modification of this software, in whole or in part,
- * may result in severe civil and criminal penalties under applicable copyright and trade secret laws.
+ * Violations may result in severe civil and criminal penalties under applicable
+ * copyright, intellectual property, and trade secret laws.
  */
 package mobi.kairos.android
 
@@ -38,16 +40,24 @@ class MainActivity : ComponentActivity() {
         setContent {
             val darkTheme = isSystemInDarkTheme()
             val supportsDynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-            val colorScheme = when {
-                supportsDynamicColor -> {
-                    if (darkTheme) dynamicDarkColorScheme(this)
-                    else dynamicLightColorScheme(this)
+            val colorScheme =
+                when {
+                    supportsDynamicColor -> {
+                        if (darkTheme) {
+                            dynamicDarkColorScheme(this)
+                        } else {
+                            dynamicLightColorScheme(this)
+                        }
+                    }
+
+                    else -> {
+                        if (darkTheme) {
+                            darkColorScheme()
+                        } else {
+                            lightColorScheme()
+                        }
+                    }
                 }
-                else -> {
-                    if (darkTheme) darkColorScheme()
-                    else lightColorScheme()
-                }
-            }
 
             MaterialTheme(colorScheme = colorScheme) {
                 KairosUI()

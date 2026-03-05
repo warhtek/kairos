@@ -1,3 +1,13 @@
+/*
+ * © 2026 MOBIWARE. All rights reserved.
+ *
+ * This software and its source code are the exclusive property of MOBIWARE.
+ * Any unauthorized use, reproduction, distribution, modification, or disclosure
+ * of this software, whether in whole or in part, is strictly prohibited.
+ *
+ * Violations may result in severe civil and criminal penalties under applicable
+ * copyright, intellectual property, and trade secret laws.
+ */
 package mobi.kairos.android.ui.common
 
 import androidx.compose.material3.MaterialTheme
@@ -8,15 +18,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
-fun Clickable(
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-    content: @Composable () -> Unit,
-) {
+fun Clickable(modifier: Modifier = Modifier, onClick: () -> Unit, content: @Composable () -> Unit) {
     Surface(
         modifier = modifier,
         onClick = onClick,
-        content = content
+        content = content,
     )
 }
 
@@ -27,10 +33,9 @@ fun ClickablePreview() {
         Clickable(
             onClick = {
                 // NOOP
-            }
+            },
         ) {
             Text("Click me!")
         }
     }
 }
-

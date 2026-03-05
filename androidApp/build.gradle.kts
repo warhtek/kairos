@@ -7,7 +7,10 @@ plugins {
 android {
     namespace = "mobi.kairos.android"
     compileSdk = 36
-    defaultConfig { minSdk = 23; targetSdk = 36 }
+    defaultConfig {
+        minSdk = 23
+        targetSdk = 36
+    }
     buildFeatures { compose = true }
     buildTypes { debug { enableUnitTestCoverage = true } }
     testOptions {
@@ -22,7 +25,7 @@ kover {
             excludes {
                 androidGeneratedClasses()
                 annotatedBy(
-                    "androidx.compose.ui.tooling.preview.Preview"
+                    "androidx.compose.ui.tooling.preview.Preview",
                 )
                 classes(
                     // Room generated
