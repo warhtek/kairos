@@ -14,7 +14,6 @@ navigation-compose = "2.9.7"
 ui-tooling-preview = "1.10.4"
 ui-tooling = "1.10.4"
 spotless = "8.2.1"
-ktlint = "1.5.0"
 
 [libraries]
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
@@ -40,4 +39,4 @@ android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
-spotless = { id = "com.diffplug.spotless", version.ref = "spotless" } # Spotless Gradle plugin
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
