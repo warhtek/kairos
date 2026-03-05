@@ -33,7 +33,7 @@ val roomModule =
             databaseBuilder(
                 context = androidContext(),
                 dbName = get(named("DB_NAME")),
-                nofifier = get(),
+                notifier = get(),
             )
         }
         single { get<AppDatabase>().databaseInfoDao() }

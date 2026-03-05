@@ -26,15 +26,13 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun databaseInfoDao(): DatabaseInfoDao
 }
 
-internal fun databaseBuilder(context: Context, dbName: String, nofifier: RoomReadyNotifier): AppDatabase = Room
+internal fun databaseBuilder(context: Context, dbName: String, notifier: RoomReadyNotifier): AppDatabase = Room
     .databaseBuilder(
         context = context,
         klass = AppDatabase::class.java,
         name = dbName,
     ).fallbackToDestructiveMigration(true)
+    .addCallback(notifier)
     .build()
-    .also {
-        nofifier.notifyReady()
-    }
 
 internal fun databaseReadyNotifierBuilder(scope: CoroutineScope): RoomReadyNotifier = RoomReadyNotifier(scope)

@@ -23,11 +23,11 @@ import org.junit.runner.RunWith
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
-import org.koin.java.KoinJavaComponent
+import org.koin.test.KoinTest
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class DatabaseInfoRepositoryTest {
+class DatabaseInfoRepositoryTest : KoinTest {
     private lateinit var databaseRepository: DatabaseRepository
 
     @Before
@@ -36,12 +36,12 @@ class DatabaseInfoRepositoryTest {
             androidContext(ApplicationProvider.getApplicationContext())
             modules(dataModule)
         }
-        databaseRepository = KoinJavaComponent.getKoin().get()
+        databaseRepository = getKoin().get()
     }
 
     @After
     fun tearDown() {
-        KoinJavaComponent.getKoin().get<AppDatabase>().close()
+        getKoin().get<AppDatabase>().close()
         stopKoin()
     }
 

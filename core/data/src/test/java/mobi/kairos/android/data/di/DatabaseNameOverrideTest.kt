@@ -24,11 +24,11 @@ import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
-import org.koin.java.KoinJavaComponent
+import org.koin.test.KoinTest
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class DatabaseNameOverrideTest {
+class DatabaseNameOverrideTest : KoinTest {
     @Before
     fun setUp() {
         startKoin {
@@ -51,7 +51,7 @@ class DatabaseNameOverrideTest {
 
     @Test
     fun `database file is created with overridden name`() {
-        val db: AppDatabase = KoinJavaComponent.getKoin().get()
+        val db: AppDatabase = getKoin().get()
         val app: Application = ApplicationProvider.getApplicationContext()
 
         db.openHelper.writableDatabase
