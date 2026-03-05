@@ -14,8 +14,8 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import kotlinx.coroutines.CoroutineScope
 import mobi.kairos.android.data.dao.DatabaseInfoDao
-import mobi.kairos.android.data.di.DbInitNotifier
 import mobi.kairos.android.data.entity.ContentEntity
 
 @Database(
@@ -26,7 +26,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun databaseInfoDao(): DatabaseInfoDao
 }
 
-internal fun databaseBuilder(context: Context, dbName: String, nofifier: DbInitNotifier): AppDatabase = Room
+internal fun databaseBuilder(context: Context, dbName: String, nofifier: RoomReadyNotifier): AppDatabase = Room
     .databaseBuilder(
         context = context,
         klass = AppDatabase::class.java,
@@ -36,3 +36,5 @@ internal fun databaseBuilder(context: Context, dbName: String, nofifier: DbInitN
     .also {
         nofifier.notifyReady()
     }
+
+internal fun databaseReadyNotifierBuilder(scope: CoroutineScope): RoomReadyNotifier = RoomReadyNotifier(scope)

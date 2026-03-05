@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import mobi.kairos.android.data.AppDatabase
 import mobi.kairos.android.data.databaseBuilder
+import mobi.kairos.android.data.databaseReadyNotifierBuilder
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -25,7 +26,9 @@ val roomModule =
     module {
         single(named("DB_NAME")) { DB_NAME }
         single<CoroutineScope> { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
-        single { DbInitNotifier(get()) }
+        single {
+            databaseReadyNotifierBuilder(get())
+        }
         single {
             databaseBuilder(
                 context = androidContext(),

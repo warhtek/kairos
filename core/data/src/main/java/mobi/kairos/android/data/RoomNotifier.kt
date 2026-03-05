@@ -8,16 +8,16 @@
  * Violations may result in severe civil and criminal penalties under applicable
  * copyright, intellectual property, and trade secret laws.
  */
-package mobi.kairos.android.data.di
+package mobi.kairos.android.data
 
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 
-private const val TAG = "DbInitNotifier"
+private const val TAG = "RoomReadyNotifier"
 
-class DbInitNotifier(private val scope: CoroutineScope) {
+class RoomReadyNotifier(private val scope: CoroutineScope) {
     private val _dbReady = MutableSharedFlow<Unit>(replay = 1)
     // val dbReady: SharedFlow<Unit> = _dbReady
 
