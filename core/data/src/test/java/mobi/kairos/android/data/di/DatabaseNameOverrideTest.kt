@@ -12,6 +12,8 @@ package mobi.kairos.android.data.di
 
 import android.app.Application
 import androidx.test.core.app.ApplicationProvider
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import mobi.kairos.android.data.AppDatabase
 import org.junit.After
@@ -25,10 +27,13 @@ import org.koin.core.context.stopKoin
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.test.KoinTest
+import org.koin.test.get
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class DatabaseNameOverrideTest : KoinTest {
+    private lateinit var database: AppDatabase
+
     @Before
     fun setUp() {
         startKoin {
@@ -42,23 +47,33 @@ class DatabaseNameOverrideTest : KoinTest {
                 single(named("DB_NAME")) { "test_kairos.db" }
             },
         )
+
+        database = get()
     }
 
     @After
     fun tearDown() {
+        if (::database.isInitialized) {
+            database.close()
+        }
         stopKoin()
     }
 
     @Test
     fun `database file is created with overridden name`() {
-        val db: AppDatabase = getKoin().get()
         val app: Application = ApplicationProvider.getApplicationContext()
-
-        db.openHelper.writableDatabase
+        database.openHelper.writableDatabase.use {}
 
         val expected = app.getDatabasePath("test_kairos.db")
         assertTrue(expected.exists(), "Expected ${expected.absolutePath} to exist")
+        assertTrue(expected.length() > 0, "Database file should not be empty")
+    }
 
-        db.close()
+    @Test
+    fun `database instance is created with correct name`() {
+        database.openHelper.writableDatabase.use { db ->
+            assertNotNull(db)
+            assertEquals(db.path?.endsWith("test_kairos.db"), true, "Database path should end with test_kairos.db but was: ${db.path}")
+        }
     }
 }
