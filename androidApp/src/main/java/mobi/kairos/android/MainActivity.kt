@@ -23,8 +23,8 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
-import mobi.kairos.android.usecase.GetDatabaseVersionUseCase
 import org.koin.android.ext.android.inject
+import mobi.kairos.android.usecase.GetDatabaseVersionUseCase
 
 class MainActivity : ComponentActivity() {
     private val getDatabaseVersion: GetDatabaseVersionUseCase by inject()

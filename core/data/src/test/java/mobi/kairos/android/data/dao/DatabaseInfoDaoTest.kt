@@ -14,12 +14,12 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import kotlin.test.assertEquals
 import kotlinx.coroutines.test.runTest
-import mobi.kairos.android.data.AppDatabase
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import mobi.kairos.android.data.AppDatabase
 
 abstract class BaseDao {
     lateinit var db: AppDatabase

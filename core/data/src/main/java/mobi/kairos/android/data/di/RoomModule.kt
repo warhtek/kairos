@@ -10,11 +10,11 @@
  */
 package mobi.kairos.android.data.di
 
-import mobi.kairos.android.data.AppDatabase
-import mobi.kairos.android.data.databaseBuilder
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
+import mobi.kairos.android.data.AppDatabase
+import mobi.kairos.android.data.databaseBuilder
 
 private const val DB_NAME = "kairos.db"
 

@@ -13,9 +13,6 @@ package mobi.kairos.android.data.repository
 import androidx.test.core.app.ApplicationProvider
 import kotlin.test.assertEquals
 import kotlinx.coroutines.test.runTest
-import mobi.kairos.android.data.AppDatabase
-import mobi.kairos.android.data.di.dataModule
-import mobi.kairos.android.repository.DatabaseRepository
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -25,6 +22,9 @@ import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.test.KoinTest
 import org.robolectric.RobolectricTestRunner
+import mobi.kairos.android.data.AppDatabase
+import mobi.kairos.android.data.di.dataModule
+import mobi.kairos.android.repository.DatabaseRepository
 
 @RunWith(RobolectricTestRunner::class)
 class DatabaseInfoRepositoryTest : KoinTest {
@@ -41,7 +41,13 @@ class DatabaseInfoRepositoryTest : KoinTest {
 
     @After
     fun tearDown() {
-        getKoin().get<AppDatabase>().close()
+        runCatching {
+            getKoin().get<AppDatabase>().apply {
+                if (isOpen) {
+                    close()
+                }
+            }
+        }
         stopKoin()
     }
 

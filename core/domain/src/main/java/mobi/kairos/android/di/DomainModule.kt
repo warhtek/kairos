@@ -10,8 +10,8 @@
  */
 package mobi.kairos.android.di
 
-import mobi.kairos.android.usecase.GetDatabaseVersionUseCase
 import org.koin.dsl.module
+import mobi.kairos.android.usecase.GetDatabaseVersionUseCase
 
 val domainModule =
     module {

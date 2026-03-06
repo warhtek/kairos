@@ -12,7 +12,6 @@ package mobi.kairos.android.data.di
 
 import androidx.test.core.app.ApplicationProvider
 import kotlin.test.assertNotNull
-import mobi.kairos.android.data.AppDatabase
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -25,6 +24,7 @@ import org.koin.java.KoinJavaComponent
 import org.koin.test.KoinTest
 import org.koin.test.verify.verify
 import org.robolectric.RobolectricTestRunner
+import mobi.kairos.android.data.AppDatabase
 
 @RunWith(RobolectricTestRunner::class)
 class DataModuleVerifyTest : KoinTest {
@@ -45,7 +45,8 @@ class DataModuleVerifyTest : KoinTest {
         db.close()
     }
 
-    @Test @KoinExperimentalAPI
+    @Test
+    @KoinExperimentalAPI
     fun `verify all declared class constructors are bound`() {
         dataModule.verify()
     }

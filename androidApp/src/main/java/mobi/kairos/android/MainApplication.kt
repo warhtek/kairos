@@ -11,11 +11,11 @@
 package mobi.kairos.android
 
 import android.app.Application
-import mobi.kairos.android.data.di.dataModule
-import mobi.kairos.android.di.domainModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
+import mobi.kairos.android.data.di.dataModule
+import mobi.kairos.android.di.domainModule
 
 class MainApplication : Application() {
     override fun onCreate() {

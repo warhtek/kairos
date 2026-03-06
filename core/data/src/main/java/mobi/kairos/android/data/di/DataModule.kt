@@ -13,12 +13,12 @@ package mobi.kairos.android.data.di
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import org.koin.dsl.module
 import mobi.kairos.android.data.AppDatabase
 import mobi.kairos.android.data.RoomReadyNotifier
 import mobi.kairos.android.data.dao.DatabaseInfoDao
 import mobi.kairos.android.data.repository.DatabaseRepositoryImpl
 import mobi.kairos.android.repository.DatabaseRepository
-import org.koin.dsl.module
 
 val dataModule =
     module {
