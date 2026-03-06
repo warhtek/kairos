@@ -11,7 +11,6 @@
 package mobi.kairos.android.data.di
 
 import mobi.kairos.android.data.AppDatabase
-import mobi.kairos.android.data.dao.DatabaseInfoDao
 import mobi.kairos.android.data.databaseBuilder
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.qualifier.named
@@ -19,16 +18,13 @@ import org.koin.dsl.module
 
 private const val DB_NAME = "kairos.db"
 
-val roomModule =
-    module {
-        single(named("DB_NAME")) { DB_NAME }
-        single<AppDatabase> {
-            databaseBuilder(
-                context = androidContext(),
-                dbName = get(named("DB_NAME")),
-                notifier = get(),
-            )
-        }
-
-        single<DatabaseInfoDao> { get<AppDatabase>().databaseInfoDao() }
+val roomModule = module {
+    single(named("DB_NAME")) { DB_NAME }
+    single<AppDatabase> {
+        databaseBuilder(
+            context = androidContext(),
+            dbName = get(named("DB_NAME")),
+            notifier = get(),
+        )
     }
+}

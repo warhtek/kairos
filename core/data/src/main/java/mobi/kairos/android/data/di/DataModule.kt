@@ -13,7 +13,9 @@ package mobi.kairos.android.data.di
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import mobi.kairos.android.data.AppDatabase
 import mobi.kairos.android.data.RoomReadyNotifier
+import mobi.kairos.android.data.dao.DatabaseInfoDao
 import mobi.kairos.android.data.repository.DatabaseRepositoryImpl
 import mobi.kairos.android.repository.DatabaseRepository
 import org.koin.dsl.module
@@ -21,8 +23,9 @@ import org.koin.dsl.module
 val dataModule =
     module {
         single<CoroutineScope> { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
-        single<DatabaseRepository> { DatabaseRepositoryImpl(get()) }
         single<RoomReadyNotifier> { RoomReadyNotifier(get()) }
+        single<DatabaseRepository> { DatabaseRepositoryImpl(get()) }
+        single<DatabaseInfoDao> { get<AppDatabase>().databaseInfoDao() }
 
         includes(roomModule)
     }

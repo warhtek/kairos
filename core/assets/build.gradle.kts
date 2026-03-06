@@ -7,6 +7,3 @@ android {
     compileSdk = 36
     defaultConfig { minSdk = 23 }
 }
-dependencies {
-    implementation(libs.koin.core)
-}
