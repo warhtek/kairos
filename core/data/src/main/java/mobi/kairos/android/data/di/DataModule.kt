@@ -17,15 +17,20 @@ import org.koin.dsl.module
 import mobi.kairos.android.data.AppDatabase
 import mobi.kairos.android.data.RoomReadyNotifier
 import mobi.kairos.android.data.dao.DatabaseInfoDao
+import mobi.kairos.android.data.dao.TranslationDao
 import mobi.kairos.android.data.repository.DatabaseRepositoryImpl
+import mobi.kairos.android.data.repository.TranslationRepositoryImpl
 import mobi.kairos.android.repository.DatabaseRepository
+import mobi.kairos.android.repository.TranslationRepository
 
 val dataModule =
     module {
         single<CoroutineScope> { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
         single<RoomReadyNotifier> { RoomReadyNotifier(get()) }
         single<DatabaseRepository> { DatabaseRepositoryImpl(get()) }
+        single<TranslationRepository> { TranslationRepositoryImpl(get()) }
         single<DatabaseInfoDao> { get<AppDatabase>().databaseInfoDao() }
+        single<TranslationDao> { get<AppDatabase>().translationDao() }
 
         includes(roomModule)
     }

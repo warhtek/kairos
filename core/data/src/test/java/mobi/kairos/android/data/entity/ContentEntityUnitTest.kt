@@ -14,7 +14,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import org.junit.Test
 
-class ContentEntityTest {
+class ContentEntityUnitTest {
     @Test
     fun `entity initialization works and supports copy, equals and component`() {
         val entity = ContentEntity(id = 5L)

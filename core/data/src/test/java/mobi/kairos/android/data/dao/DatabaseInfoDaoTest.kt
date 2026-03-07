@@ -10,7 +10,6 @@
  */
 package mobi.kairos.android.data.dao
 
-import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import kotlin.test.assertEquals
 import kotlinx.coroutines.test.runTest
@@ -18,35 +17,30 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
+import org.koin.test.KoinTest
 import org.robolectric.RobolectricTestRunner
 import mobi.kairos.android.data.AppDatabase
-
-abstract class BaseDao {
-    lateinit var db: AppDatabase
-
-    fun setupInMemoryDb() {
-        db =
-            Room
-                .inMemoryDatabaseBuilder(
-                    ApplicationProvider.getApplicationContext(),
-                    AppDatabase::class.java,
-                ).build()
-    }
-}
+import mobi.kairos.android.data.di.dataModule
 
 @RunWith(RobolectricTestRunner::class)
-class DatabaseInfoDaoTest : BaseDao() {
+class DatabaseInfoDaoTest : KoinTest {
     private lateinit var databaseInfoDao: DatabaseInfoDao
 
     @Before
     fun setUp() {
-        setupInMemoryDb()
-        databaseInfoDao = db.databaseInfoDao()
+        startKoin {
+            androidContext(ApplicationProvider.getApplicationContext())
+            modules(dataModule)
+        }
+        databaseInfoDao = getKoin().get<AppDatabase>().databaseInfoDao()
     }
 
     @After
     fun tearDown() {
-        db.close()
+        stopKoin()
     }
 
     @Test

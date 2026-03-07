@@ -22,7 +22,6 @@ import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.test.KoinTest
 import org.robolectric.RobolectricTestRunner
-import mobi.kairos.android.data.AppDatabase
 import mobi.kairos.android.data.di.dataModule
 import mobi.kairos.android.repository.DatabaseRepository
 
@@ -41,13 +40,6 @@ class DatabaseInfoRepositoryTest : KoinTest {
 
     @After
     fun tearDown() {
-        runCatching {
-            getKoin().get<AppDatabase>().apply {
-                if (isOpen) {
-                    close()
-                }
-            }
-        }
         stopKoin()
     }
 
