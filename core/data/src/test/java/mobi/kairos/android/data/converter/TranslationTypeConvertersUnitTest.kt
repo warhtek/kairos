@@ -8,11 +8,10 @@
  * Violations may result in severe civil and criminal penalties under applicable
  * copyright, intellectual property, and trade secret laws.
  */
-package mobi.kairos.android.data.entity
+package mobi.kairos.android.data.converter
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import mobi.kairos.android.data.converter.TranslationTypeConverters
 import mobi.kairos.android.model.AvailableFormat
 import mobi.kairos.android.model.TextDirection
 

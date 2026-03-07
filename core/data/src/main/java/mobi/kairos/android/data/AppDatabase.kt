@@ -34,6 +34,7 @@ internal fun databaseBuilder(context: Context, dbName: String, notifier: RoomRea
         context = context,
         klass = AppDatabase::class.java,
         name = dbName,
-    ).fallbackToDestructiveMigration(true)
+    )
+    .fallbackToDestructiveMigration(true)
     .addCallback(notifier)
     .build()

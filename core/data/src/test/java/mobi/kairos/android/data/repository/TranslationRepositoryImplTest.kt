@@ -10,44 +10,22 @@
  */
 package mobi.kairos.android.data.repository
 
-import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.test.runTest
-import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.koin.android.ext.koin.androidContext
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
-import org.koin.test.KoinTest
 import org.robolectric.RobolectricTestRunner
-import mobi.kairos.android.data.di.dataModule
+import mobi.kairos.android.data.BaseKoinTest
 import mobi.kairos.android.data.entity.TranslationEntity
 import mobi.kairos.android.model.AvailableFormat
 import mobi.kairos.android.model.TextDirection
 import mobi.kairos.android.repository.TranslationRepository
 
 @RunWith(RobolectricTestRunner::class)
-class TranslationRepositoryImplTest : KoinTest {
-    private lateinit var translationRepository: TranslationRepository
-
-    @Before
-    fun setUp() {
-        startKoin {
-            androidContext(ApplicationProvider.getApplicationContext())
-            modules(dataModule)
-        }
-        translationRepository = getKoin().get()
-    }
-
-    @After
-    fun tearDown() {
-        stopKoin()
-    }
-
+class TranslationRepositoryImplTest : BaseKoinTest() {
     @Test
     fun `importTranslations should call insertAll on dao with given translations`() = runTest {
         // Given
+        val translationRepository = getKoin().get<TranslationRepository>()
         val translations = listOf(
             TranslationEntity(
                 id = "5L",

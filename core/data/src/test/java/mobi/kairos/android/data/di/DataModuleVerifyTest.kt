@@ -11,37 +11,19 @@
 package mobi.kairos.android.data.di
 
 import android.util.Log
-import androidx.test.core.app.ApplicationProvider
-import org.junit.After
-import org.junit.Before
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.koin.android.ext.koin.androidContext
 import org.koin.core.annotation.KoinExperimentalAPI
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
-import org.koin.test.KoinTest
 import org.koin.test.verify.verify
 import org.robolectric.RobolectricTestRunner
+import mobi.kairos.android.data.BaseKoinTest
 
 @RunWith(RobolectricTestRunner::class)
-class DataModuleVerifyTest : KoinTest {
-    @Before
-    fun setUp() {
-        startKoin {
-            androidContext(ApplicationProvider.getApplicationContext())
-            modules(dataModule)
-        }
-    }
-
-    @After
-    fun tearDown() {
-        stopKoin()
-    }
-
+class DataModuleVerifyTest : BaseKoinTest() {
     @Test
     @KoinExperimentalAPI
-    fun `verify all declared class constructors are bound`() {
+    fun `verify all declared class constructors are bound`() = runTest {
         runCatching {
             dataModule.verify()
         }.onFailure {

@@ -10,42 +10,21 @@
  */
 package mobi.kairos.android.data.dao
 
-import androidx.test.core.app.ApplicationProvider
 import kotlin.test.assertEquals
 import kotlinx.coroutines.test.runTest
-import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.koin.android.ext.koin.androidContext
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
-import org.koin.test.KoinTest
 import org.robolectric.RobolectricTestRunner
-import mobi.kairos.android.data.AppDatabase
-import mobi.kairos.android.data.di.dataModule
+import mobi.kairos.android.data.BaseKoinTest
 
 @RunWith(RobolectricTestRunner::class)
-class DatabaseInfoDaoTest : KoinTest {
-    private lateinit var databaseInfoDao: DatabaseInfoDao
-
-    @Before
-    fun setUp() {
-        startKoin {
-            androidContext(ApplicationProvider.getApplicationContext())
-            modules(dataModule)
-        }
-        databaseInfoDao = getKoin().get<AppDatabase>().databaseInfoDao()
-    }
-
-    @After
-    fun tearDown() {
-        stopKoin()
-    }
-
+class DatabaseInfoDaoTest : BaseKoinTest() {
     @Test
     fun `getVersion returns 1`() = runTest {
-        val version = databaseInfoDao.getVersion()
-        assertEquals(1, version)
+        // Given
+        val databaseInfoDao = getKoin().get<DatabaseInfoDao>()
+
+        // When
+        assertEquals(1, databaseInfoDao.getVersion())
     }
 }
