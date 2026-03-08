@@ -16,11 +16,10 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import mobi.kairos.android.data.dao.DatabaseInfoDao
 import mobi.kairos.android.data.dao.TranslationDao
-import mobi.kairos.android.data.entity.ContentEntity
 import mobi.kairos.android.data.entity.TranslationEntity
 
 @Database(
-    entities = [ContentEntity::class, TranslationEntity::class],
+    entities = [TranslationEntity::class],
     exportSchema = false,
     version = 1,
 )
