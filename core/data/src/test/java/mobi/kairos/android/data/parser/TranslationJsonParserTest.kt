@@ -32,7 +32,7 @@ class TranslationJsonParserTest {
     fun `should parse from InputStream`() {
         // Given
         val jsonString = """
-            [
+            {"translations":[
                 {
                   "id": "spa_r09",
                   "name": "Santa Biblia — Reina Valera 1909",
@@ -54,7 +54,7 @@ class TranslationJsonParserTest {
                   "languageName": "español",
                   "languageEnglishName": "Spanish"
                 }
-            ]
+            ]}
         """.trimIndent()
         // When
         val result = parser.parse(ByteArrayInputStream(jsonString.toByteArray()))
@@ -104,7 +104,7 @@ class TranslationJsonParserTest {
     fun `should parse multiple translations`() {
         // Given
         val jsonString = """
-            [
+            {"translations":[
                 {
                   "id": "spa_r09",
                   "name": "Santa Biblia — Reina Valera 1909",
@@ -139,7 +139,7 @@ class TranslationJsonParserTest {
                   "languageName": "English",
                   "languageEnglishName": "English"
                 }
-            ]
+            ]}
         """.trimIndent()
 
         val inputStream = ByteArrayInputStream(jsonString.toByteArray())

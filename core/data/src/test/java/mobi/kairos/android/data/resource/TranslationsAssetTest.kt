@@ -29,7 +29,7 @@ class TranslationsAssetTest {
 
     private lateinit var translationsAsset: TranslationsAsset
     private val mockAssetResource = mockk<AssetResource>()
-    private val expectedPath = "assets/available_translations.json"
+    private val expectedPath = "available_translations.json"
 
     @Before
     fun setup() {

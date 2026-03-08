@@ -10,14 +10,14 @@
  */
 package mobi.kairos.android.data.model
 
-import android.annotation.SuppressLint
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
 import mobi.kairos.android.model.AvailableFormat
 import mobi.kairos.android.model.TextDirection
 import mobi.kairos.android.model.Translation
 
-@SuppressLint("UnsafeOptInUsageError")
 @Serializable
+@InternalSerializationApi
 data class TranslationImportModel(
     override val id: String,
     override val name: String,

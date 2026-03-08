@@ -19,10 +19,12 @@ import mobi.kairos.android.data.AppDatabase
 import mobi.kairos.android.data.RoomReadyNotifier
 import mobi.kairos.android.data.dao.DatabaseInfoDao
 import mobi.kairos.android.data.dao.TranslationDao
+import mobi.kairos.android.data.parser.TranslationJsonParserImpl
 import mobi.kairos.android.data.repository.DatabaseRepositoryImpl
 import mobi.kairos.android.data.repository.TranslationRepositoryImpl
 import mobi.kairos.android.data.resource.AndroidAssetResource
 import mobi.kairos.android.data.resource.TranslationsAssetImpl
+import mobi.kairos.android.parser.TranslationJsonParser
 import mobi.kairos.android.repository.DatabaseRepository
 import mobi.kairos.android.repository.TranslationRepository
 import mobi.kairos.android.resource.AssetResource
@@ -39,5 +41,6 @@ val dataModule =
         single<AssetResource> { AndroidAssetResource(androidContext()) }
         single<TranslationsAsset> { TranslationsAssetImpl(get()) }
         single<TranslationRepository> { TranslationRepositoryImpl(get()) }
+        single<TranslationJsonParser> { TranslationJsonParserImpl() }
         includes(roomModule)
     }

@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.androidTestImplementation
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.ksp)
@@ -8,7 +10,7 @@ plugins {
 android {
     namespace = "mobi.kairos.android.data"
     compileSdk = 36
-    defaultConfig { minSdk = 23 }
+    defaultConfig { minSdk = 23; testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }
     buildTypes { debug { enableUnitTestCoverage = true } }
     testOptions {
         unitTests {
@@ -21,6 +23,12 @@ kover {
         filters {
             excludes {
                 androidGeneratedClasses()
+                packages(
+                    "kotlinx.serialization.*",
+                    "kotlinx.serialization.json.*",
+                    "kotlinx.serialization.internal.*",
+                    "kotlinx.serialization.encoding.*",
+                )
                 classes(
                     // Room generated
                     "*_Impl",
@@ -32,6 +40,30 @@ kover {
                     "*Dao_Impl\$*",
                     // Room Database generated
                     "*Database_Impl",
+
+                    // Kotlin generated
+                    "*\$DefaultImpls",
+                    "*\$Companion",
+
+                    // Kotlin Serialization generated
+                    "*\$serializer",
+
+                    // Opt-in annotations
+                    "*\$*OptIn*",
+
+                    // Test classes
+                    "*Test*",
+                )
+                // exclude by annotation
+                annotatedBy(
+                    "Serializable",
+                    "kotlinx.serialization.Serializable",
+                    "kotlinx.serialization.InternalSerializationApi",
+                    "kotlinx.serialization.ExperimentalSerializationApi",
+                    "kotlin.OptIn",
+                    "kotlin.RequiresOptIn",
+                    "androidx.annotation.RequiresOptIn",
+                    "kotlinx.coroutines.ExperimentalCoroutinesApi",
                 )
             }
         }
@@ -52,4 +84,12 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.koin.test)
     testImplementation(libs.mockk)
+
+    androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.koin.test)
+
+    androidTestImplementation(libs.androidx.junit.ktx)
+    androidTestImplementation("androidx.test:runner:1.7.0")
 }

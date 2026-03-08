@@ -14,7 +14,7 @@ import java.io.InputStream
 import mobi.kairos.android.resource.AssetResource
 import mobi.kairos.android.resource.TranslationsAsset
 
-private const val TRANSLATIONS_PATH = "assets/available_translations.json"
+private const val TRANSLATIONS_PATH = "available_translations.json"
 
 class TranslationsAssetImpl(private val assetResource: AssetResource) : TranslationsAsset {
     override suspend fun openJsonStream(): Result<InputStream> = assetResource.openStream(TRANSLATIONS_PATH)

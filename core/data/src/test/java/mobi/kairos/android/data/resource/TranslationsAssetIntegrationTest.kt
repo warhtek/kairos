@@ -30,7 +30,7 @@ class TranslationsAssetIntegrationTest {
     private val mockContext = mockk<Context>()
     private val mockAssetManager = mockk<AssetManager>()
 
-    private val expectedPath = "assets/available_translations.json"
+    private val expectedPath = "available_translations.json"
 
     @Before
     fun setup() {

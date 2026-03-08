@@ -12,9 +12,11 @@ package mobi.kairos.android.data.parser
 
 import java.io.InputStream
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import mobi.kairos.android.data.model.TranslationImportModel
+import mobi.kairos.android.data.model.TranslationsImportResponse
 import mobi.kairos.android.parser.TranslationJsonParser
 
 class TranslationJsonParserImpl : TranslationJsonParser {
@@ -25,10 +27,13 @@ class TranslationJsonParserImpl : TranslationJsonParser {
         isLenient = true
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
+    @OptIn(ExperimentalSerializationApi::class, InternalSerializationApi::class)
     override fun parse(inputStream: InputStream): Result<List<TranslationImportModel>> {
         return runCatching {
-            inputStream.use { json.decodeFromStream(it) }
+            inputStream.use { stream ->
+                val response = json.decodeFromStream< TranslationsImportResponse>(stream)
+                response.translations
+            }
         }
     }
 }
