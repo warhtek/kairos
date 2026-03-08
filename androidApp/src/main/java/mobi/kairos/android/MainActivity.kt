@@ -23,8 +23,11 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.android.ext.android.inject
 import mobi.kairos.android.data.RoomReadyNotifier
 import mobi.kairos.android.usecase.GetDatabaseVersionUseCase
@@ -37,6 +40,8 @@ class MainActivity : ComponentActivity() {
     private val importTranslations: ImportTranslationsUseCase by inject()
 
     private val importTranslationBooks: ImportTranslationBooksUseCase by inject()
+
+    private val coroutineScope: CoroutineScope by inject()
 
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,7 +88,9 @@ class MainActivity : ComponentActivity() {
 
         // Import translations on first launch
         if (version == 1) {
-            Toast.makeText(this, "One moment, we are setting up the database", Toast.LENGTH_LONG).show()
+            coroutineScope.launch {
+                Toast.makeText(this@MainActivity, "One moment, we are setting up the database", Toast.LENGTH_LONG).show()
+            }
             importTranslations().onSuccess {
                 Log.d("MainActivity", "Imported ${it.count} translations in ${it.durationMs} ms")
             }
