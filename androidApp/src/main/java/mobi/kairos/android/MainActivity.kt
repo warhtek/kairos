@@ -28,12 +28,15 @@ import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import mobi.kairos.android.data.RoomReadyNotifier
 import mobi.kairos.android.usecase.GetDatabaseVersionUseCase
+import mobi.kairos.android.usecase.ImportTranslationBooksUseCase
 import mobi.kairos.android.usecase.ImportTranslationsUseCase
 
 class MainActivity : ComponentActivity() {
     private val roomReadyNotifier: RoomReadyNotifier by inject()
     private val getDatabaseVersion: GetDatabaseVersionUseCase by inject()
     private val importTranslations: ImportTranslationsUseCase by inject()
+
+    private val importTranslationBooks: ImportTranslationBooksUseCase by inject()
 
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,6 +86,9 @@ class MainActivity : ComponentActivity() {
             Toast.makeText(this, "One moment, we are setting up the database", Toast.LENGTH_LONG).show()
             importTranslations().onSuccess {
                 Log.d("MainActivity", "Imported ${it.count} translations in ${it.durationMs} ms")
+            }
+            importTranslationBooks().onSuccess {
+                Log.d("MainActivity", "Imported ${it.count} translation books in ${it.durationMs} ms")
             }
         }
     }
