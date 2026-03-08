@@ -24,11 +24,10 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.koin.android.ext.android.inject
+import org.koin.core.qualifier.named
 import mobi.kairos.android.data.RoomReadyNotifier
 import mobi.kairos.android.usecase.GetDatabaseVersionUseCase
 import mobi.kairos.android.usecase.ImportTranslationBooksUseCase
@@ -38,16 +37,14 @@ class MainActivity : ComponentActivity() {
     private val roomReadyNotifier: RoomReadyNotifier by inject()
     private val getDatabaseVersion: GetDatabaseVersionUseCase by inject()
     private val importTranslations: ImportTranslationsUseCase by inject()
-
     private val importTranslationBooks: ImportTranslationBooksUseCase by inject()
-
-    private val coroutineScope: CoroutineScope by inject()
+    private val appScope: CoroutineScope by inject(named("appScope"))
 
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         lifecycleScope.launch {
-            launchApplicationDatabase()
+            launchAppDatabaseSetup()
         }
 
         setContent {
@@ -78,7 +75,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private suspend fun launchApplicationDatabase() = runCatching {
+    private suspend fun launchAppDatabaseSetup() = runCatching {
         val version = getDatabaseVersion()
         Log.d("MainActivity", "DB version: $version")
 
@@ -88,14 +85,14 @@ class MainActivity : ComponentActivity() {
 
         // Import translations on first launch
         if (version == 1) {
-            coroutineScope.launch {
+            appScope.launch {
                 Toast.makeText(this@MainActivity, "One moment, we are setting up the database", Toast.LENGTH_LONG).show()
             }
             importTranslations().onSuccess {
                 Log.d("MainActivity", "Imported ${it.count} translations in ${it.durationMs} ms")
             }
             importTranslationBooks().onSuccess {
-                Log.d("MainActivity", "Imported ${it.count} translation books in ${it.durationMs} ms")
+                Log.d("MainActivity", "Imported ${it.count} books in ${it.durationMs} ms")
             }
         }
     }

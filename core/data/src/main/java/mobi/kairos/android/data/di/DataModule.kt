@@ -14,6 +14,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import org.koin.android.ext.koin.androidContext
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import mobi.kairos.android.data.AppDatabase
 import mobi.kairos.android.data.RoomReadyNotifier
@@ -39,8 +40,8 @@ import mobi.kairos.android.resource.TranslationsAsset
 
 val dataModule =
     module {
-        single<CoroutineScope> { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
-        single<RoomReadyNotifier> { RoomReadyNotifier(get()) }
+        single<CoroutineScope>(named("ioScope")) { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
+        single<RoomReadyNotifier> { RoomReadyNotifier(get(named("ioScope"))) }
         single<DatabaseRepository> { DatabaseRepositoryImpl(get()) }
         single<TranslationRepository> { TranslationRepositoryImpl(get()) }
         single<DatabaseInfoDao> { get<AppDatabase>().databaseInfoDao() }

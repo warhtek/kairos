@@ -14,8 +14,7 @@ import android.app.Application
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
-import mobi.kairos.android.data.di.dataModule
-import mobi.kairos.android.di.domainModule
+import mobi.kairos.android.di.appModule
 
 class MainApplication : Application() {
     override fun onCreate() {
@@ -23,7 +22,7 @@ class MainApplication : Application() {
         startKoin {
             androidLogger()
             androidContext(this@MainApplication)
-            modules(domainModule, dataModule)
+            modules(appModule)
         }
     }
 }
