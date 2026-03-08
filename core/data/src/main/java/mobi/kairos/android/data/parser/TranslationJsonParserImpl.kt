@@ -31,7 +31,7 @@ class TranslationJsonParserImpl : TranslationJsonParser {
     override fun parse(inputStream: InputStream): Result<List<TranslationImportModel>> {
         return runCatching {
             inputStream.use { stream ->
-                val response = json.decodeFromStream< TranslationsImportResponse>(stream)
+                val response = json.decodeFromStream<TranslationsImportResponse>(stream)
                 response.translations
             }
         }

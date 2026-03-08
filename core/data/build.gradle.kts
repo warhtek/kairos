@@ -10,7 +10,10 @@ plugins {
 android {
     namespace = "mobi.kairos.android.data"
     compileSdk = 36
-    defaultConfig { minSdk = 23; testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }
+    defaultConfig {
+        minSdk = 23
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
     buildTypes { debug { enableUnitTestCoverage = true } }
     testOptions {
         unitTests {
@@ -86,10 +89,7 @@ dependencies {
     testImplementation(libs.mockk)
 
     androidTestImplementation(libs.kotlinx.coroutines.test)
-    androidTestImplementation(libs.androidx.test.core)
-    androidTestImplementation(libs.junit)
     androidTestImplementation(libs.koin.test)
-
+    androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.junit.ktx)
-    androidTestImplementation("androidx.test:runner:1.7.0")
 }
