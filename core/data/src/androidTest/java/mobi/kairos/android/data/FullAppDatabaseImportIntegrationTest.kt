@@ -30,6 +30,7 @@ import org.koin.test.KoinTest
 import org.koin.test.get
 import mobi.kairos.android.data.di.dataModule
 import mobi.kairos.android.di.domainModule
+import mobi.kairos.android.usecase.ImportTranslationBooksUseCase
 import mobi.kairos.android.usecase.ImportTranslationsUseCase
 
 private const val TAG = "FullAppDatabaseImportIntegrationTest"
@@ -75,6 +76,31 @@ class FullAppDatabaseImportIntegrationTest : KoinTest {
             onSuccess = { summary ->
                 TestCase.assertEquals(summary.count, count)
                 Log.d(TAG, "✅ Imported ${summary.count} translations")
+                TestCase.assertEquals(summary.count, 1255)
+            },
+            onFailure = { error ->
+                TestCase.fail("Failed: ${error.message}")
+            },
+        )
+    }
+
+    @Test
+    fun verifyImportTranslationBooks() = runTest {
+        // Given
+        val database: AppDatabase = get()
+        val useCase: ImportTranslationBooksUseCase = get()
+        val dao = database.translationBookDao()
+
+        // When
+        val result = useCase()
+        val count = dao.count()
+
+        // Then
+        result.fold(
+            onSuccess = { summary ->
+                TestCase.assertEquals(summary.count, count)
+                Log.d(TAG, "✅ Imported ${summary.count} translation books")
+                TestCase.assertEquals(summary.count, 66)
             },
             onFailure = { error ->
                 TestCase.fail("Failed: ${error.message}")

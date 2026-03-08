@@ -20,6 +20,7 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.InternalSerializationApi
 import org.junit.Before
 import org.junit.Test
 import mobi.kairos.android.data.model.TranslationBookModel
@@ -45,6 +46,7 @@ class ImportTranslationBooksUseCaseTest {
         )
     }
 
+    @OptIn(InternalSerializationApi::class)
     @Test
     fun `should import books successfully`() = runTest {
         // Given
@@ -155,6 +157,7 @@ class ImportTranslationBooksUseCaseTest {
         )
     }
 
+    @OptIn(InternalSerializationApi::class)
     @Test
     fun `should import empty list successfully`() = runTest {
         // Given

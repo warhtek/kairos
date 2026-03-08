@@ -20,17 +20,21 @@ import mobi.kairos.android.data.RoomReadyNotifier
 import mobi.kairos.android.data.dao.DatabaseInfoDao
 import mobi.kairos.android.data.dao.TranslationBookDao
 import mobi.kairos.android.data.dao.TranslationDao
+import mobi.kairos.android.data.parser.TranslationBookJsonParserImpl
 import mobi.kairos.android.data.parser.TranslationJsonParserImpl
 import mobi.kairos.android.data.repository.DatabaseRepositoryImpl
 import mobi.kairos.android.data.repository.TranslationBookRepositoryImpl
 import mobi.kairos.android.data.repository.TranslationRepositoryImpl
 import mobi.kairos.android.data.resource.AndroidAssetResource
+import mobi.kairos.android.data.resource.TranslationBooksAssetImpl
 import mobi.kairos.android.data.resource.TranslationsAssetImpl
+import mobi.kairos.android.parser.TranslationBookJsonParser
 import mobi.kairos.android.parser.TranslationJsonParser
 import mobi.kairos.android.repository.DatabaseRepository
 import mobi.kairos.android.repository.TranslationBookRepository
 import mobi.kairos.android.repository.TranslationRepository
 import mobi.kairos.android.resource.AssetResource
+import mobi.kairos.android.resource.TranslationBooksAsset
 import mobi.kairos.android.resource.TranslationsAsset
 
 val dataModule =
@@ -44,7 +48,9 @@ val dataModule =
         single<TranslationBookDao> { get<AppDatabase>().translationBookDao() }
         single<AssetResource> { AndroidAssetResource(androidContext()) }
         single<TranslationsAsset> { TranslationsAssetImpl(get()) }
+        single<TranslationBooksAsset> { TranslationBooksAssetImpl("spa_bes", get()) }
         single<TranslationJsonParser> { TranslationJsonParserImpl() }
+        single<TranslationBookJsonParser> { TranslationBookJsonParserImpl() }
         single<TranslationRepository> { TranslationRepositoryImpl(get()) }
         single<TranslationBookRepository> { TranslationBookRepositoryImpl(get()) }
 

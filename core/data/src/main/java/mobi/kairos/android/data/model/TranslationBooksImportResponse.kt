@@ -12,21 +12,7 @@ package mobi.kairos.android.data.model
 
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
-import mobi.kairos.android.model.TranslationBook
 
 @Serializable
 @InternalSerializationApi
-data class TranslationBookModel(
-    override val id: String,
-    override val name: String,
-    override val commonName: String,
-    override val title: String?,
-    override val order: Int,
-    override val numberOfChapters: Int,
-    override val firstChapterNumber: Int,
-    override val firstChapterApiLink: String,
-    override val lastChapterNumber: Int,
-    override val lastChapterApiLink: String,
-    override val totalNumberOfVerses: Int,
-    override val isApocryphal: Boolean = false,
-) : TranslationBook
+data class TranslationBooksImportResponse(val books: List<TranslationBookModel>)
