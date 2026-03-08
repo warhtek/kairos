@@ -10,6 +10,7 @@
  */
 package mobi.kairos.android.data.repository
 
+import junit.framework.TestCase
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -51,5 +52,40 @@ class TranslationRepositoryImplTest : BaseKoinTest() {
 
         // When
         translationRepository.importTranslations(translations)
+    }
+
+    @Test
+    fun `count should return the number of translations in the database`() = runTest {
+        // Given
+        val translationRepository = getKoin().get<TranslationRepository>()
+        val translations = listOf(
+            TranslationEntity(
+                id = "5L",
+                name = "name",
+                englishName = "englishName",
+                website = "website",
+                licenseUrl = "licenseUrl",
+                shortName = "shortName",
+                language = "language",
+                languageName = "languageName",
+                languageEnglishName = "languageEnglishName",
+                textDirection = TextDirection.LTR,
+                availableFormats = listOf(AvailableFormat.JSON),
+                listOfBooksApiLink = "listOfBooksApiLink",
+                numberOfBooks = 1,
+                totalNumberOfChapters = 2,
+                totalNumberOfVerses = 3,
+                numberOfApocryphalBooks = 4,
+                totalNumberOfApocryphalChapters = 5,
+                totalNumberOfApocryphalVerses = 6,
+            ),
+        )
+
+        // When
+        translationRepository.importTranslations(translations)
+        val count = translationRepository.count()
+
+        // Then
+        TestCase.assertEquals(1, count)
     }
 }

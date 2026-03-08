@@ -12,6 +12,7 @@ package mobi.kairos.android.data
 
 import junit.framework.TestCase
 import android.content.Context
+import android.util.Log
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -31,20 +32,18 @@ import mobi.kairos.android.data.di.dataModule
 import mobi.kairos.android.di.domainModule
 import mobi.kairos.android.usecase.ImportTranslationsUseCase
 
+private const val TAG = "FullAppDatabaseImportIntegrationTest"
+
 @RunWith(AndroidJUnit4::class)
 @OptIn(ExperimentalCoroutinesApi::class)
-class FullIntegrationTest : KoinTest {
+class FullAppDatabaseImportIntegrationTest : KoinTest {
     @Before
     fun setup() {
         val context = ApplicationProvider.getApplicationContext<Context>()
 
         val testModule = module {
             single<AppDatabase> {
-                Room.inMemoryDatabaseBuilder(
-                    context,
-                    AppDatabase::class.java,
-                ).allowMainThreadQueries()
-                    .build()
+                Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
             }
         }
 
@@ -61,22 +60,21 @@ class FullIntegrationTest : KoinTest {
     }
 
     @Test
-    fun fullImportFlowWithRealDatabase() = runTest {
+    fun verifyImportTranslation() = runTest {
         // Given
+        val database: AppDatabase = get()
         val useCase: ImportTranslationsUseCase = get()
+        val dao = database.translationDao()
 
         // When
         val result = useCase()
+        val count = dao.count()
 
         // Then
         result.fold(
             onSuccess = { summary ->
-                println("✅ Imported ${summary.count} translations")
-                // Verify DB
-                // val database: AppDatabase = get()
-                // val dao = database.translationDao()
-                // val count = dao.getCount()
-                // TestCase.assertEquals(summary.count, count)
+                TestCase.assertEquals(summary.count, count)
+                Log.d(TAG, "✅ Imported ${summary.count} translations")
             },
             onFailure = { error ->
                 TestCase.fail("Failed: ${error.message}")

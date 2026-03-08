@@ -14,4 +14,6 @@ import mobi.kairos.android.model.Translation
 
 interface TranslationRepository {
     suspend fun importTranslations(translations: List<Translation>)
+
+    suspend fun count(): Int
 }

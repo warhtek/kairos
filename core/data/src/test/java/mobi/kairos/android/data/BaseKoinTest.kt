@@ -10,7 +10,9 @@
  */
 package mobi.kairos.android.data
 
+import android.util.Log
 import androidx.test.core.app.ApplicationProvider
+import kotlin.onFailure
 import org.junit.After
 import org.junit.Before
 import org.koin.android.ext.koin.androidContext
@@ -22,14 +24,22 @@ import mobi.kairos.android.data.di.dataModule
 abstract class BaseKoinTest : KoinTest {
     @Before
     fun setUp() {
-        startKoin {
-            androidContext(ApplicationProvider.getApplicationContext())
-            modules(dataModule)
+        runCatching {
+            startKoin {
+                androidContext(ApplicationProvider.getApplicationContext())
+                modules(dataModule)
+            }
+        }.onFailure {
+            Log.e("BaseKoinTest", "Error detected during Koin stop", it)
         }
     }
 
     @After
     fun tearDown() {
-        stopKoin()
+        runCatching {
+            stopKoin()
+        }.onFailure {
+            Log.e("BaseKoinTest", "Error detected during Koin stop", it)
+        }
     }
 }

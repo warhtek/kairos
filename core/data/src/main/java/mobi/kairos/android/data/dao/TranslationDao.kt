@@ -13,10 +13,14 @@ package mobi.kairos.android.data.dao
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
+import androidx.room.Query
 import mobi.kairos.android.data.entity.TranslationEntity
 
 @Dao
 interface TranslationDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(translations: List<TranslationEntity>)
+
+    @Query("SELECT COUNT(*) FROM translations")
+    suspend fun count(): Int
 }

@@ -28,12 +28,13 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun translationDao(): TranslationDao
 }
 
-internal fun databaseBuilder(context: Context, dbName: String, notifier: RoomReadyNotifier): AppDatabase = Room
-    .databaseBuilder(
+internal fun databaseBuilder(context: Context, dbName: String, notifier: RoomReadyNotifier): AppDatabase {
+    return Room.databaseBuilder(
         context = context,
         klass = AppDatabase::class.java,
         name = dbName,
     )
-    .fallbackToDestructiveMigration(true)
-    .addCallback(notifier)
-    .build()
+        .fallbackToDestructiveMigration(true)
+        .addCallback(notifier)
+        .build()
+}
