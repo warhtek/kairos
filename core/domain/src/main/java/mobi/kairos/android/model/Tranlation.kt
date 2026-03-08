@@ -10,6 +10,9 @@
  */
 package mobi.kairos.android.model
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
 interface Translation {
     val id: String
     val name: String
@@ -31,5 +34,20 @@ interface Translation {
     val totalNumberOfApocryphalVerses: Int?
 }
 
-enum class TextDirection { LTR, RTL }
-enum class AvailableFormat { JSON, USFM }
+@Serializable
+enum class TextDirection {
+    @SerialName("ltr")
+    LTR,
+
+    @SerialName("rtl")
+    RTL,
+}
+
+@Serializable
+enum class AvailableFormat {
+    @SerialName("json")
+    JSON,
+
+    @SerialName("usfm")
+    USFM,
+}

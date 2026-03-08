@@ -20,14 +20,14 @@ class TranslationTypeConverters {
     fun fromTextDirection(direction: TextDirection): String = direction.name
 
     @TypeConverter
-    fun toTextDirection(direction: String): TextDirection = TextDirection.valueOf(direction)
+    fun toTextDirection(direction: String): TextDirection = TextDirection.valueOf(direction.uppercase())
 
     @TypeConverter
-    fun fromAvailableFormats(formats: List<AvailableFormat>): String = formats.joinToString(",") { it.name }
+    fun fromAvailableFormats(formats: List<AvailableFormat>): String = formats.joinToString(",") { it.name.uppercase() }
 
     @TypeConverter
     fun toAvailableFormats(formatsString: String): List<AvailableFormat> {
         if (formatsString.isBlank()) return emptyList()
-        return formatsString.split(",").map { AvailableFormat.valueOf(it) }
+        return formatsString.split(",").map { AvailableFormat.valueOf(it.uppercase()) }
     }
 }

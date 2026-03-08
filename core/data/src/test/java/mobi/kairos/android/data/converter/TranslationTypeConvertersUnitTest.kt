@@ -27,7 +27,7 @@ class TranslationTypeConvertersTest {
 
     @Test
     fun `toTextDirection - should convert String to LTR enum`() {
-        val result = converters.toTextDirection("LTR")
+        val result = converters.toTextDirection("ltr")
         assertEquals(TextDirection.LTR, result)
     }
 
@@ -40,7 +40,7 @@ class TranslationTypeConvertersTest {
 
     @Test
     fun `toAvailableFormats - should convert comma string to list`() {
-        val result = converters.toAvailableFormats("JSON,USFM")
+        val result = converters.toAvailableFormats("json,usFM")
         assertEquals(listOf(AvailableFormat.JSON, AvailableFormat.USFM), result)
     }
 

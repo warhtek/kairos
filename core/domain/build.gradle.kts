@@ -9,4 +9,5 @@ android {
 }
 dependencies {
     implementation(libs.koin.core)
+    implementation(libs.kotlinx.serialization.json)
 }

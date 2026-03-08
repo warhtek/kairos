@@ -8,14 +8,10 @@
  * Violations may result in severe civil and criminal penalties under applicable
  * copyright, intellectual property, and trade secret laws.
  */
-package mobi.kairos.android.di
+package mobi.kairos.android.resource
 
-import org.koin.dsl.module
-import mobi.kairos.android.usecase.GetDatabaseVersionUseCase
-import mobi.kairos.android.usecase.ImportTranslationsUseCase
+import java.io.InputStream
 
-val domainModule =
-    module {
-        factory { GetDatabaseVersionUseCase(get()) }
-        factory { ImportTranslationsUseCase(get(), get(), get()) }
-    }
+interface AssetResource {
+    suspend fun openStream(path: String): Result<InputStream>
+}

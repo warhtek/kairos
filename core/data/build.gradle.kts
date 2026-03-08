@@ -51,4 +51,5 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
     testImplementation(libs.koin.test)
+    testImplementation(libs.mockk)
 }
