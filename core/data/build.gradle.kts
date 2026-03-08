@@ -75,12 +75,14 @@ kover {
 dependencies {
     implementation(project(":core:domain"))
     implementation(project(":core:assets"))
+
     implementation(libs.koin.core)
     implementation(libs.koin.android)
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     implementation(libs.kotlinx.serialization.json)
     ksp(libs.room.compiler)
+
     testImplementation(libs.junit)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.kotlinx.coroutines.test)

@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kover)
 }
 
@@ -24,8 +26,11 @@ kover {
         filters {
             excludes {
                 androidGeneratedClasses()
-                annotatedBy(
-                    "androidx.compose.ui.tooling.preview.Preview",
+                packages(
+                    "kotlinx.serialization.*",
+                    "kotlinx.serialization.json.*",
+                    "kotlinx.serialization.internal.*",
+                    "kotlinx.serialization.encoding.*",
                 )
                 classes(
                     // Room generated
@@ -38,6 +43,30 @@ kover {
                     "*Dao_Impl\$*",
                     // Room Database generated
                     "*Database_Impl",
+
+                    // Kotlin generated
+                    "*\$DefaultImpls",
+                    "*\$Companion",
+
+                    // Kotlin Serialization generated
+                    "*\$serializer",
+
+                    // Opt-in annotations
+                    "*\$*OptIn*",
+
+                    // Test classes
+                    "*Test*",
+                )
+                // exclude by annotation
+                annotatedBy(
+                    "Serializable",
+                    "kotlinx.serialization.Serializable",
+                    "kotlinx.serialization.InternalSerializationApi",
+                    "kotlinx.serialization.ExperimentalSerializationApi",
+                    "kotlin.OptIn",
+                    "kotlin.RequiresOptIn",
+                    "androidx.annotation.RequiresOptIn",
+                    "kotlinx.coroutines.ExperimentalCoroutinesApi",
                 )
             }
         }
@@ -49,8 +78,14 @@ dependencies {
     implementation(project(":ui:home"))
     kover(project(":core:data"))
     kover(project(":ui:home"))
+
     implementation(libs.koin.core)
     implementation(libs.koin.android)
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    implementation(libs.kotlinx.serialization.json)
+    ksp(libs.room.compiler)
+
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.activity.compose)

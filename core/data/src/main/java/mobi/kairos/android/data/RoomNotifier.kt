@@ -15,13 +15,14 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 
 private const val TAG = "RoomReadyNotifier"
 
 class RoomReadyNotifier(private val scope: CoroutineScope) : RoomDatabase.Callback() {
     private val _dbReady = MutableSharedFlow<Unit>(replay = 1)
-    // val dbReady: SharedFlow<Unit> = _dbReady
+    val dbReady: SharedFlow<Unit> = _dbReady
 
     fun notifyReady() = scope.launch {
         _dbReady.emit(Unit)
