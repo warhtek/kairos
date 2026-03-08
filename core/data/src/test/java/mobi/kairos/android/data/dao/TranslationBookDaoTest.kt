@@ -18,14 +18,14 @@ import org.robolectric.RobolectricTestRunner
 import mobi.kairos.android.data.BaseKoinTest
 
 @RunWith(RobolectricTestRunner::class)
-class TranslationDaoTest : BaseKoinTest() {
+class TranslationBookDaoTest : BaseKoinTest() {
     @Test
     fun `count should return 0`() = runTest {
         // Given
-        val translationDao = getKoin().get<TranslationDao>()
+        val translationBookDao = getKoin().get<TranslationBookDao>()
 
         // When
-        val count = translationDao.count()
+        val count = translationBookDao.count()
 
         // Then
         TestCase.assertEquals(0, count)

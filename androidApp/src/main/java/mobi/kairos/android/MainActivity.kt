@@ -80,7 +80,7 @@ class MainActivity : ComponentActivity() {
 
         // Import translations on first launch
         if (version == 1) {
-            Toast.makeText(this@MainActivity, "One moment, we are setting up the database", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "One moment, we are setting up the database", Toast.LENGTH_LONG).show()
             importTranslations().onSuccess {
                 Log.d("MainActivity", "Imported ${it.count} translations in ${it.durationMs} ms")
             }

@@ -12,10 +12,12 @@ package mobi.kairos.android.di
 
 import org.koin.dsl.module
 import mobi.kairos.android.usecase.GetDatabaseVersionUseCase
+import mobi.kairos.android.usecase.ImportTranslationBooksUseCase
 import mobi.kairos.android.usecase.ImportTranslationsUseCase
 
 val domainModule =
     module {
         factory { GetDatabaseVersionUseCase(get()) }
         factory { ImportTranslationsUseCase(get(), get(), get()) }
+        factory { ImportTranslationBooksUseCase(get(), get(), get()) }
     }
