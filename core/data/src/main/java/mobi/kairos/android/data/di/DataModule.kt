@@ -40,6 +40,7 @@ import mobi.kairos.android.resource.TranslationsAsset
 
 val dataModule =
     module {
+        single(named("availableTranslations")) { "spa_bes" }
         single<CoroutineScope>(named("ioScope")) { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
         single<RoomReadyNotifier> { RoomReadyNotifier(get(named("ioScope"))) }
         single<DatabaseRepository> { DatabaseRepositoryImpl(get()) }
@@ -49,7 +50,7 @@ val dataModule =
         single<TranslationBookDao> { get<AppDatabase>().translationBookDao() }
         single<AssetResource> { AndroidAssetResource(androidContext()) }
         single<TranslationsAsset> { TranslationsAssetImpl(get()) }
-        single<TranslationBooksAsset> { TranslationBooksAssetImpl("spa_bes", get()) }
+        single<TranslationBooksAsset> { TranslationBooksAssetImpl(get(named("availableTranslations")), get()) }
         single<TranslationJsonParser> { TranslationJsonParserImpl() }
         single<TranslationBookJsonParser> { TranslationBookJsonParserImpl() }
         single<TranslationRepository> { TranslationRepositoryImpl(get()) }
