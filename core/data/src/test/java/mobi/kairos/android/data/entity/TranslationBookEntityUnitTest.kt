@@ -11,7 +11,9 @@
 package mobi.kairos.android.data.entity
 
 import junit.framework.TestCase
+import kotlinx.serialization.InternalSerializationApi
 import org.junit.Test
+import mobi.kairos.android.data.model.TranslationBookModel
 
 class TranslationBookEntityUnitTest {
     @Test
@@ -61,5 +63,38 @@ class TranslationBookEntityUnitTest {
         val text = entity.toString()
         assert(text.contains("TranslationBookEntity"))
         assert(text.contains("id=1"))
+    }
+    @OptIn(InternalSerializationApi::class)
+    @Test
+    fun `toEntity should map TranslationBook to TranslationBookEntity correctly`() {
+        val book = TranslationBookModel(
+            id = "GEN",
+            name = "Genesis",
+            commonName = "Genesis",
+            title = "The Book of Genesis",
+            order = 1,
+            numberOfChapters = 50,
+            firstChapterNumber = 1,
+            firstChapterApiLink = "/api/spa_r09/GEN/1.json",
+            lastChapterNumber = 50,
+            lastChapterApiLink = "/api/spa_r09/GEN/50.json",
+            totalNumberOfVerses = 1533,
+            isApocryphal = false,
+        )
+
+        val entity = book.toEntity()
+
+        TestCase.assertEquals("GEN", entity.id)
+        TestCase.assertEquals("Genesis", entity.name)
+        TestCase.assertEquals("Genesis", entity.commonName)
+        TestCase.assertEquals("The Book of Genesis", entity.title)
+        TestCase.assertEquals(1, entity.order)
+        TestCase.assertEquals(50, entity.numberOfChapters)
+        TestCase.assertEquals(1, entity.firstChapterNumber)
+        TestCase.assertEquals("/api/spa_r09/GEN/1.json", entity.firstChapterApiLink)
+        TestCase.assertEquals(50, entity.lastChapterNumber)
+        TestCase.assertEquals("/api/spa_r09/GEN/50.json", entity.lastChapterApiLink)
+        TestCase.assertEquals(1533, entity.totalNumberOfVerses)
+        TestCase.assertFalse(entity.isApocryphal)
     }
 }

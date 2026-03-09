@@ -13,5 +13,5 @@ package mobi.kairos.android.resource
 import java.io.InputStream
 
 interface TranslationBooksAsset {
-    suspend fun openJsonStream(): Result<InputStream>
+    suspend fun openJsonStream(translationId: String): Result<InputStream>
 }

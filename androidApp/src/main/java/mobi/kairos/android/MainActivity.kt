@@ -91,7 +91,7 @@ class MainActivity : ComponentActivity() {
             importTranslations().onSuccess {
                 Log.d("MainActivity", "Imported ${it.count} translations in ${it.durationMs} ms")
             }
-            importTranslationBooks().onSuccess {
+            importTranslationBooks(listOf("spa_bes")).onSuccess {
                 Log.d("MainActivity", "Imported ${it.count} books in ${it.durationMs} ms")
             }
         }

@@ -33,7 +33,7 @@ class TranslationBooksAssetTest {
 
     @Before
     fun setup() {
-        translationBooksAsset = TranslationBooksAssetImpl("spa_bes", mockAssetResource)
+        translationBooksAsset = TranslationBooksAssetImpl(mockAssetResource)
     }
 
     @Test
@@ -43,7 +43,7 @@ class TranslationBooksAssetTest {
         coEvery { mockAssetResource.openStream(expectedPath) } returns Result.success(expectedStream)
 
         // When
-        val result = translationBooksAsset.openJsonStream()
+        val result = translationBooksAsset.openJsonStream("spa_bes")
 
         // Then
         result.fold(
@@ -64,7 +64,7 @@ class TranslationBooksAssetTest {
         coEvery { mockAssetResource.openStream(expectedPath) } returns Result.failure(expectedError)
 
         // When
-        val result = translationBooksAsset.openJsonStream()
+        val result = translationBooksAsset.openJsonStream("spa_bes")
 
         // Then
         result.fold(
@@ -85,7 +85,7 @@ class TranslationBooksAssetTest {
         coEvery { mockAssetResource.openStream(any()) } returns Result.success(stream)
 
         // When
-        translationBooksAsset.openJsonStream()
+        translationBooksAsset.openJsonStream("spa_bes")
 
         // Then
         coEvery { mockAssetResource.openStream("translation_books.json") }
@@ -99,8 +99,8 @@ class TranslationBooksAssetTest {
         coEvery { mockAssetResource.openStream(expectedPath) } returns Result.success(stream1) andThen Result.success(stream2)
 
         // When
-        val result1 = translationBooksAsset.openJsonStream()
-        val result2 = translationBooksAsset.openJsonStream()
+        val result1 = translationBooksAsset.openJsonStream("spa_bes")
+        val result2 = translationBooksAsset.openJsonStream("spa_bes")
 
         // Then
         TestCase.assertTrue(result1.isSuccess)
@@ -112,13 +112,13 @@ class TranslationBooksAssetTest {
     fun `should handle empty path gracefully`() = runTest {
         // Given
         val translationBooksAssetWithEmptyPath = object : TranslationBooksAsset {
-            override suspend fun openJsonStream(): Result<InputStream> = mockAssetResource.openStream("")
+            override suspend fun openJsonStream(translationId: String): Result<InputStream> = mockAssetResource.openStream("")
         }
         val expectedError = RuntimeException("Empty path")
         coEvery { mockAssetResource.openStream("") } returns Result.failure(expectedError)
 
         // When
-        val result = translationBooksAssetWithEmptyPath.openJsonStream()
+        val result = translationBooksAssetWithEmptyPath.openJsonStream("spa_bes")
 
         // Then
         result.fold(

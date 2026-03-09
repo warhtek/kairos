@@ -16,6 +16,7 @@ import mobi.kairos.android.resource.TranslationBooksAsset
 
 private const val TRANSLATIONS_BOOKS_PATH = "books.json"
 
-class TranslationBooksAssetImpl(private val translationId: String, private val assetResource: AssetResource) : TranslationBooksAsset {
-    override suspend fun openJsonStream(): Result<InputStream> = assetResource.openStream("$translationId/$TRANSLATIONS_BOOKS_PATH")
+class TranslationBooksAssetImpl(private val assetResource: AssetResource) : TranslationBooksAsset {
+    override suspend fun openJsonStream(translationId: String): Result<InputStream> =
+        assetResource.openStream("$translationId/$TRANSLATIONS_BOOKS_PATH")
 }

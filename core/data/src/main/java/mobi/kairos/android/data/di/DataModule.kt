@@ -50,7 +50,7 @@ val dataModule =
         single<TranslationBookDao> { get<AppDatabase>().translationBookDao() }
         single<AssetResource> { AndroidAssetResource(androidContext()) }
         single<TranslationsAsset> { TranslationsAssetImpl(get()) }
-        single<TranslationBooksAsset> { TranslationBooksAssetImpl(get(named("availableTranslations")), get()) }
+        single<TranslationBooksAsset> { TranslationBooksAssetImpl(get()) }
         single<TranslationJsonParser> { TranslationJsonParserImpl() }
         single<TranslationBookJsonParser> { TranslationBookJsonParserImpl() }
         single<TranslationRepository> { TranslationRepositoryImpl(get()) }

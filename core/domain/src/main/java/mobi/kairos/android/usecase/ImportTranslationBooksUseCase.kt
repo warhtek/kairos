@@ -19,19 +19,23 @@ class ImportTranslationBooksUseCase(
     private val jsonParser: TranslationBookJsonParser,
     private val translationBookRepository: TranslationBookRepository,
 ) {
-    suspend operator fun invoke(): Result<ImportSummary> {
+    suspend operator fun invoke(translations: List<String>): Result<ImportSummary> {
         val startTime = System.currentTimeMillis()
 
         return try {
-            val stream = translationBooksAsset.openJsonStream().getOrElse { return Result.failure(it) }
-            val books = jsonParser.parse(stream).getOrElse { return Result.failure(it) }
+            var totalBooks = 0
+            translations.forEach {
+                val stream = translationBooksAsset.openJsonStream(it).getOrElse { return Result.failure(it) }
+                val books = jsonParser.parse(stream).getOrElse { return Result.failure(it) }
 
-            translationBookRepository.importBooks(books)
+                translationBookRepository.importBooks(books)
 
+                totalBooks += books.size
+            }
             Result.success(
                 ImportSummary(
                     success = true,
-                    count = books.size,
+                    count = totalBooks,
                     durationMs = System.currentTimeMillis() - startTime,
                 ),
             )

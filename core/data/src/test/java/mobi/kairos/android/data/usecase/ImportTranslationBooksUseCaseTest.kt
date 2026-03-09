@@ -69,11 +69,11 @@ class ImportTranslationBooksUseCaseTest {
             ),
         )
 
-        coEvery { mockAsset.openJsonStream() } returns Result.success(fakeStream)
+        coEvery { mockAsset.openJsonStream("spa_bes") } returns Result.success(fakeStream)
         coEvery { mockParser.parse(any<InputStream>()) } returns Result.success(fakeBooks)
 
         // When
-        val result = useCase()
+        val result = useCase(listOf("spa_bes"))
 
         // Then
         result.fold(
@@ -86,7 +86,7 @@ class ImportTranslationBooksUseCaseTest {
         )
 
         coVerify(exactly = 1) {
-            mockAsset.openJsonStream()
+            mockAsset.openJsonStream("spa_bes")
             mockParser.parse(any<InputStream>())
             mockRepository.importBooks(fakeBooks)
         }
@@ -96,10 +96,10 @@ class ImportTranslationBooksUseCaseTest {
     fun `should return failure when asset cannot be opened`() = runTest {
         // Given
         val error = RuntimeException("Asset not found")
-        coEvery { mockAsset.openJsonStream() } returns Result.failure(error)
+        coEvery { mockAsset.openJsonStream("spa_bes") } returns Result.failure(error)
 
         // When
-        val result = useCase()
+        val result = useCase(listOf("spa_bes"))
 
         // Then
         result.fold(
@@ -109,7 +109,7 @@ class ImportTranslationBooksUseCaseTest {
             },
         )
 
-        coVerify(exactly = 1) { mockAsset.openJsonStream() }
+        coVerify(exactly = 1) { mockAsset.openJsonStream("spa_bes") }
         coVerify(exactly = 0) { mockParser.parse(any<InputStream>()) }
         coVerify(exactly = 0) { mockRepository.importBooks(any()) }
     }
@@ -119,11 +119,11 @@ class ImportTranslationBooksUseCaseTest {
         // Given
         val fakeStream = ByteArrayInputStream("[]".toByteArray())
         val error = RuntimeException("Parse error")
-        coEvery { mockAsset.openJsonStream() } returns Result.success(fakeStream)
+        coEvery { mockAsset.openJsonStream("spa_bes") } returns Result.success(fakeStream)
         coEvery { mockParser.parse(any<InputStream>()) } returns Result.failure(error)
 
         // When
-        val result = useCase()
+        val result = useCase(listOf("spa_bes"))
 
         // Then
         result.fold(
@@ -134,7 +134,7 @@ class ImportTranslationBooksUseCaseTest {
         )
 
         coVerify(exactly = 1) {
-            mockAsset.openJsonStream()
+            mockAsset.openJsonStream("spa_bes")
             mockParser.parse(any<InputStream>())
         }
         coVerify(exactly = 0) { mockRepository.importBooks(any()) }
@@ -143,10 +143,10 @@ class ImportTranslationBooksUseCaseTest {
     @Test
     fun `should handle unexpected exception in try block`() = runTest {
         // Given
-        coEvery { mockAsset.openJsonStream() } throws RuntimeException("Unexpected crash")
+        coEvery { mockAsset.openJsonStream("spa_bes") } throws RuntimeException("Unexpected crash")
 
         // When
-        val result = useCase()
+        val result = useCase(listOf("spa_bes"))
 
         // Then
         result.fold(
@@ -163,11 +163,11 @@ class ImportTranslationBooksUseCaseTest {
         // Given
         val fakeStream = ByteArrayInputStream("[]".toByteArray())
         val emptyList = emptyList<TranslationBookModel>()
-        coEvery { mockAsset.openJsonStream() } returns Result.success(fakeStream)
+        coEvery { mockAsset.openJsonStream("spa_bes") } returns Result.success(fakeStream)
         coEvery { mockParser.parse(any<InputStream>()) } returns Result.success(emptyList)
 
         // When
-        val result = useCase()
+        val result = useCase(listOf("spa_bes"))
 
         // Then
         result.fold(

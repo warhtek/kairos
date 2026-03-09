@@ -92,7 +92,7 @@ class FullAppDatabaseImportIntegrationTest : KoinTest {
         val dao = database.translationBookDao()
 
         // When
-        val result = useCase()
+        val result = useCase(listOf("spa_bes"))
         val count = dao.count()
 
         // Then
