@@ -1,2 +1,41 @@
-.gradle
-build
+# Gradle files
+.gradle/
+build/
+*/build/
+*/out/
+*/output/
+captures/
+
+# IDE files
+.idea/
+*.iml
+.DS_Store
+
+# Local configuration
+local.properties
+
+# Build artifacts
+*.apk
+*.ap_
+*.dex
+*.class
+*.kotlin_module
+
+# Native
+.cxx/
+*.hprof
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*.zip
+*.tar
+*.gz
+*.rar
+*.7z
+caches/
+daemon/
+native/
+android/
+wrapper/
