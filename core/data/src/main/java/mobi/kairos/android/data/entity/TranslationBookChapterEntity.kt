@@ -14,12 +14,16 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
 import mobi.kairos.android.data.converter.TranslationBookChapterTypeConverters
+import mobi.kairos.android.data.converter.TranslationTypeConverters
 import mobi.kairos.android.data.model.ChapterFootnoteModel
 import mobi.kairos.android.model.ChapterContent
 import mobi.kairos.android.model.TranslationBookChapter
 
 @Entity(tableName = "translation_book_chapters")
-@TypeConverters(TranslationBookChapterTypeConverters::class)
+@TypeConverters(
+    TranslationBookChapterTypeConverters::class,
+    TranslationTypeConverters::class,
+)
 data class TranslationBookChapterEntity(
     @PrimaryKey
     val thisChapterLink: String,
@@ -28,25 +32,28 @@ data class TranslationBookChapterEntity(
     val nextChapterApiLink: String?,
     val previousChapterApiLink: String?,
     val numberOfVerses: Int,
-    val thisChapterAudioLinks: Map<String, String>,
-    val nextChapterAudioLinks: Map<String, String>?,
-    val previousChapterAudioLinks: Map<String, String>?,
+    val thisChapterAudioLinks: String,
+    val nextChapterAudioLinks: String?,
+    val previousChapterAudioLinks: String?,
     val chapterNumber: Int,
-    val chapterContent: List<ChapterContent>,
-    val chapterFootnotes: List<ChapterFootnoteModel>,
+    val chapterContent: String,
+    val chapterFootnotes: String,
 )
 
-fun TranslationBookChapter.toEntity(): TranslationBookChapterEntity = TranslationBookChapterEntity(
-    thisChapterLink = thisChapterLink,
-    translationId = translation.id,
-    bookId = book.id,
-    nextChapterApiLink = nextChapterApiLink,
-    previousChapterApiLink = previousChapterApiLink,
-    numberOfVerses = numberOfVerses,
-    thisChapterAudioLinks = thisChapterAudioLinks,
-    nextChapterAudioLinks = nextChapterAudioLinks,
-    previousChapterAudioLinks = previousChapterAudioLinks,
-    chapterNumber = chapter.number,
-    chapterContent = chapter.content,
-    chapterFootnotes = chapter.footnotes.filterIsInstance<ChapterFootnoteModel>(),
-)
+fun TranslationBookChapter.toEntity(): TranslationBookChapterEntity {
+    val converters = TranslationBookChapterTypeConverters()
+    return TranslationBookChapterEntity(
+        thisChapterLink = thisChapterLink,
+        translationId = translation.id,
+        bookId = book.id,
+        nextChapterApiLink = nextChapterApiLink,
+        previousChapterApiLink = previousChapterApiLink,
+        numberOfVerses = numberOfVerses,
+        thisChapterAudioLinks = converters.fromAudioLinks(thisChapterAudioLinks),
+        nextChapterAudioLinks = nextChapterAudioLinks?.let { converters.fromAudioLinks(it) },
+        previousChapterAudioLinks = previousChapterAudioLinks?.let { converters.fromAudioLinks(it) },
+        chapterNumber = chapter.number,
+        chapterContent = converters.fromChapterContentList(chapter.content),
+        chapterFootnotes = converters.fromChapterFootnoteList(chapter.footnotes),
+    )
+}

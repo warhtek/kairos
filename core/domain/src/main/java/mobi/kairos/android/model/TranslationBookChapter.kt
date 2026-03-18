@@ -35,7 +35,9 @@ interface ChapterData {
 interface ChapterContent
 
 @Serializable
-interface ChapterInlineContent
+interface ChapterInlineContent {
+    fun toText(): String = ""
+}
 
 interface ChapterHeading : ChapterContent {
     val type: String

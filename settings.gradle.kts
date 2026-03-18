@@ -25,3 +25,4 @@ dependencyResolutionManagement {
 include(":core:domain", ":core:data", ":core:assets")
 include(":ui:common", ":ui:home")
 include(":androidApp")
+include(":ui:books")

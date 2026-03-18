@@ -16,8 +16,10 @@ import kotlinx.coroutines.SupervisorJob
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import mobi.kairos.android.data.di.dataModule
+import mobi.kairos.android.ui.home.homeModule
+import mobi.kairos.android.ui.books.booksModule
 
 val appModule = module {
     single<CoroutineScope>(named("appScope")) { CoroutineScope(SupervisorJob() + Dispatchers.Main) }
-    includes(domainModule, dataModule)
+    includes(domainModule, dataModule, homeModule, booksModule)
 }

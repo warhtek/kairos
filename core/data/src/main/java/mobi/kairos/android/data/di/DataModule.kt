@@ -37,6 +37,18 @@ import mobi.kairos.android.repository.TranslationRepository
 import mobi.kairos.android.resource.AssetResource
 import mobi.kairos.android.resource.TranslationBooksAsset
 import mobi.kairos.android.resource.TranslationsAsset
+import mobi.kairos.android.data.dao.ChapterDao
+import mobi.kairos.android.data.dao.ReadingProgressDao
+import mobi.kairos.android.data.repository.ChapterRepositoryImpl
+import mobi.kairos.android.data.repository.ReadingProgressRepositoryImpl
+import mobi.kairos.android.repository.ChapterRepository
+import mobi.kairos.android.repository.ReadingProgressRepository
+import mobi.kairos.android.data.parser.CompleteTranslationJsonParserImpl
+import mobi.kairos.android.data.resource.CompleteTranslationAssetImpl
+import mobi.kairos.android.parser.CompleteTranslationJsonParser
+import mobi.kairos.android.resource.CompleteTranslationAsset
+import mobi.kairos.android.usecase.ImportChaptersUseCase
+
 
 val dataModule =
     module {
@@ -53,8 +65,14 @@ val dataModule =
         single<TranslationBooksAsset> { TranslationBooksAssetImpl(get()) }
         single<TranslationJsonParser> { TranslationJsonParserImpl() }
         single<TranslationBookJsonParser> { TranslationBookJsonParserImpl() }
-        single<TranslationRepository> { TranslationRepositoryImpl(get()) }
+        //single<TranslationRepository> { TranslationRepositoryImpl(get()) }
         single<TranslationBookRepository> { TranslationBookRepositoryImpl(get()) }
-
+        single<ChapterDao> { get<AppDatabase>().chapterDao() }
+        single<ReadingProgressDao> { get<AppDatabase>().readingProgressDao() }
+        single<ChapterRepository> { ChapterRepositoryImpl(get()) }
+        single<ReadingProgressRepository> { ReadingProgressRepositoryImpl(get()) }
+        single<CompleteTranslationAsset> { CompleteTranslationAssetImpl(get()) }
+        single<CompleteTranslationJsonParser> { CompleteTranslationJsonParserImpl() }
+        factory<ImportChaptersUseCase> { ImportChaptersUseCase(get(), get(), get()) }
         includes(roomModule)
     }

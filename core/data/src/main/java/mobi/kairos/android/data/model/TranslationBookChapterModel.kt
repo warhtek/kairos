@@ -1,13 +1,3 @@
-/*
- * © 2026 MOBIWARE. All rights reserved.
- *
- * This software and its source code are the exclusive property of MOBIWARE.
- * Any unauthorized use, reproduction, distribution, modification, or disclosure
- * of this software, whether in whole or in part, is strictly prohibited.
- *
- * Violations may result in severe civil and criminal penalties under applicable
- * copyright, intellectual property, and trade secret laws.
- */
 package mobi.kairos.android.data.model
 
 import android.annotation.SuppressLint
@@ -25,6 +15,11 @@ import mobi.kairos.android.model.ChapterVerse
 import mobi.kairos.android.model.Translation
 import mobi.kairos.android.model.TranslationBook
 import mobi.kairos.android.model.TranslationBookChapter
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonPrimitive
 
 data class TranslationBookChapterModel(
     override val translation: Translation,
@@ -39,6 +34,8 @@ data class TranslationBookChapterModel(
     override val chapter: ChapterData,
 ) : TranslationBookChapter
 
+@SuppressLint("UnsafeOptInUsageError")
+@Serializable
 data class ChapterDataModel(
     override val number: Int,
     override val content: List<ChapterContent>,
@@ -73,16 +70,35 @@ data class ChapterHebrewSubtitleModel(override val content: List<ChapterInlineCo
 @SuppressLint("UnsafeOptInUsageError")
 @Serializable
 @SerialName("verse")
-data class ChapterVerseModel(override val number: Int, override val content: List<ChapterInlineContent>) :
-    ChapterVerse,
-    ChapterContent {
+data class ChapterVerseModel(
+    override val number: Int,
+    @SerialName("content")
+    val contentRaw: JsonArray = JsonArray(emptyList()),
+) : ChapterVerse, ChapterContent {
     override val type: String get() = "verse"
+    override val content: List<ChapterInlineContent>
+        get() = contentRaw.map { element ->
+            when {
+                element is JsonPrimitive -> FormattedTextModel(element.content)
+                element is JsonObject && element["type"]?.jsonPrimitive?.content == "footnote_reference" ->
+                    VerseFootnoteReferenceModel(element["noteId"]?.jsonPrimitive?.int ?: 0)
+                element is JsonObject && element["type"]?.jsonPrimitive?.content == "inline_heading" ->
+                    InlineHeadingModel(element["heading"]?.jsonPrimitive?.content ?: "")
+                else -> FormattedTextModel(element.toString())
+            }
+        }
 }
 
 @SuppressLint("UnsafeOptInUsageError")
 @Serializable
 @SerialName("text")
-data class FormattedTextModel(val text: String, val poem: Int? = null, val wordsOfJesus: Boolean? = null) : ChapterInlineContent
+data class FormattedTextModel(
+    val text: String,
+    val poem: Int? = null,
+    val wordsOfJesus: Boolean? = null,
+) : ChapterInlineContent {
+    override fun toText(): String = text
+}
 
 @SuppressLint("UnsafeOptInUsageError")
 @Serializable

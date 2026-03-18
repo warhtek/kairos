@@ -26,19 +26,24 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import org.koin.android.ext.android.inject
-import org.koin.core.qualifier.named
 import mobi.kairos.android.data.RoomReadyNotifier
 import mobi.kairos.android.usecase.GetDatabaseVersionUseCase
+import mobi.kairos.android.usecase.ImportChaptersUseCase
 import mobi.kairos.android.usecase.ImportTranslationBooksUseCase
 import mobi.kairos.android.usecase.ImportTranslationsUseCase
+import org.koin.android.ext.android.inject
+import org.koin.core.qualifier.named
+import mobi.kairos.android.repository.ChapterRepository
 
 class MainActivity : ComponentActivity() {
     private val roomReadyNotifier: RoomReadyNotifier by inject()
     private val getDatabaseVersion: GetDatabaseVersionUseCase by inject()
     private val importTranslations: ImportTranslationsUseCase by inject()
     private val importTranslationBooks: ImportTranslationBooksUseCase by inject()
+    private val importChapters: ImportChaptersUseCase by inject()
     private val appScope: CoroutineScope by inject(named("appScope"))
+
+    private val chapterRepository: ChapterRepository by inject()
 
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,25 +55,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             val darkTheme = isSystemInDarkTheme()
             val supportsDynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-            val colorScheme =
-                when {
-                    supportsDynamicColor -> {
-                        if (darkTheme) {
-                            dynamicDarkColorScheme(this)
-                        } else {
-                            dynamicLightColorScheme(this)
-                        }
-                    }
-
-                    else -> {
-                        if (darkTheme) {
-                            darkColorScheme()
-                        } else {
-                            lightColorScheme()
-                        }
-                    }
-                }
-
+            val colorScheme = when {
+                supportsDynamicColor -> if (darkTheme) dynamicDarkColorScheme(this) else dynamicLightColorScheme(this)
+                else -> if (darkTheme) darkColorScheme() else lightColorScheme()
+            }
             MaterialTheme(colorScheme = colorScheme) {
                 KairosUI()
             }
@@ -79,14 +69,12 @@ class MainActivity : ComponentActivity() {
         val version = getDatabaseVersion()
         Log.d("MainActivity", "DB version: $version")
 
-        // Wait for DB to be open and ready
         roomReadyNotifier.dbReady.first()
         Log.d("MainActivity", "DB ready for operations")
 
-        // Import translations on first launch
-        if (version == 1) {
+        if (chapterRepository.count() == 0) {
             appScope.launch {
-                Toast.makeText(this@MainActivity, "One moment, we are setting up the database", Toast.LENGTH_LONG).show()
+                Toast.makeText(this@MainActivity, "Un momento, preparando la base de datos", Toast.LENGTH_LONG).show()
             }
             importTranslations().onSuccess {
                 Log.d("MainActivity", "Imported ${it.count} translations in ${it.durationMs} ms")
@@ -94,6 +82,13 @@ class MainActivity : ComponentActivity() {
             importTranslationBooks(listOf("spa_bes")).onSuccess {
                 Log.d("MainActivity", "Imported ${it.count} books in ${it.durationMs} ms")
             }
+            importChapters("spa_bes")
+                .onSuccess {
+                    Log.d("MainActivity", "Imported ${it.count} chapters in ${it.durationMs} ms")
+                }
+                .onFailure {
+                    Log.e("MainActivity", "Failed to import chapters", it)
+                }
         }
     }
 }

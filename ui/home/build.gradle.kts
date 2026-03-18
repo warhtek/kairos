@@ -20,6 +20,7 @@ android {
 
 dependencies {
     implementation(project(":ui:common"))
+    implementation(project(":core:domain"))
     implementation(libs.koin.core)
     implementation(libs.koin.android)
     implementation(platform(libs.androidx.compose.bom))
@@ -29,4 +30,7 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.compose.ui.test)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    implementation(libs.koin.androidx.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.compose.material.icons)
 }
