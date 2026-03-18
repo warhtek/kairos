@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="read_books">Read Books</string>
+    <string name="next">Next</string>
+    <string name="back">Back</string>
+    <string name="no_voices_available">No voices available</string>
+    <string name="voice">Voice</string>
+    <string name="more_voices">" + Voices"</string>
+    <string name="banner">Banner</string>
 </resources>

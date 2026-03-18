@@ -1,1 +1,2 @@
 mobi.kairos.android.ui.books
+string books

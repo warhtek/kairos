@@ -80,7 +80,7 @@ fun HomeScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = "Publicidad",
+                        text = stringResource(R.string.banner),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -99,7 +99,7 @@ fun HomeScreen(
                                 .weight(1f)
                                 .padding(end = 8.dp),
                         ) {
-                            Text("← Anterior")
+                            Text(stringResource(R.string.back))
                         }
                         OutlinedButton(
                             onClick = { viewModel.navigateNext() },
@@ -108,7 +108,7 @@ fun HomeScreen(
                                 .weight(1f)
                                 .padding(start = 8.dp),
                         ) {
-                            Text("Siguiente →")
+                            Text(stringResource(R.string.next))
                         }
                     }
                     else -> {}
@@ -147,7 +147,7 @@ fun HomeScreen(
                 Box {
                     TextButton(onClick = { showVoiceMenu = true }) {
                         Text(
-                            text = "Voz: ${ttsState.currentVoice?.name?.take(20) ?: "Default"}",
+                            text = stringResource(R.string.voice)+": ${ttsState.currentVoice?.name?.take(20) ?: "Default"}",
                             style = MaterialTheme.typography.labelMedium,
                         )
                     }
@@ -157,7 +157,7 @@ fun HomeScreen(
                     ) {
                         if (ttsState.availableVoices.isEmpty()) {
                             DropdownMenuItem(
-                                text = { Text("No hay voces disponibles") },
+                                text = { Text(stringResource(R.string.no_voices_available)) },
                                 onClick = { showVoiceMenu = false },
                             )
                         } else {
@@ -181,7 +181,7 @@ fun HomeScreen(
                     }
                 ) {
                     Text(
-                        text = "+ Voces",
+                        text = stringResource(R.string.more_voices),
                         style = MaterialTheme.typography.labelMedium,
                     )
                 }
