@@ -16,4 +16,6 @@ interface TranslationRepository {
     suspend fun importTranslations(translations: List<Translation>)
 
     suspend fun count(): Int
+    suspend fun getTranslations(): List<Translation>
+
 }

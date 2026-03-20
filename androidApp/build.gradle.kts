@@ -79,6 +79,7 @@ dependencies {
     kover(project(":core:data"))
     kover(project(":ui:home"))
     implementation(project(":ui:books"))
+    implementation(project(":ui:translations"))
 
     implementation(libs.koin.core)
     implementation(libs.koin.android)

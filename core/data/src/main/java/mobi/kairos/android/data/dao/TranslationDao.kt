@@ -23,4 +23,7 @@ interface TranslationDao {
 
     @Query("SELECT COUNT(*) FROM translations")
     suspend fun count(): Int
+
+    @Query("SELECT * FROM translations ORDER BY language ASC")
+    suspend fun getAll(): List<TranslationEntity>
 }

@@ -15,6 +15,7 @@ import android.speech.tts.Voice
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -39,11 +40,11 @@ class HomeViewModel(
 
     private var ttsManager: KairosTtsManager? = null
     private var verses: List<ChapterVerse> = emptyList()
-    private var currentIndex: Int = 0
     private var currentTranslationId: String = "spa_bes"
     private var currentBookId: String = "GEN"
     private var currentBookName: String = "Génesis"
     private var currentChapterNumber: Int = 1
+    private var lastReadVerseNumber: Int = 1
 
     init {
         loadLastReadVerse()
@@ -55,9 +56,8 @@ class HomeViewModel(
                 _ttsState.value = _ttsState.value.copy(isPlaying = playing)
             }
         }
-        // dar tiempo al TTS para inicializarse
         viewModelScope.launch {
-            kotlinx.coroutines.delay(1000)
+            delay(1000)
             _ttsState.value = _ttsState.value.copy(
                 availableVoices = ttsManager?.availableVoices ?: emptyList(),
                 currentVoice = ttsManager?.currentVoice,
@@ -65,11 +65,11 @@ class HomeViewModel(
         }
     }
 
-    fun speakCurrentVerse() {
-        val state = _uiState.value
-        if (state is HomeUiState.Success) {
-            ttsManager?.speak(state.verse.verseText)
+    fun speakCurrentChapter() {
+        val text = verses.joinToString(" ") { verse ->
+            "${verse.number}. ${verse.content.joinToString(" ") { it.toText() }}"
         }
+        ttsManager?.speak(text)
     }
 
     fun stopSpeaking() {
@@ -90,10 +90,9 @@ class HomeViewModel(
                         currentBookId = verse.bookId
                         currentBookName = verse.bookName
                         currentChapterNumber = verse.chapterNumber
-                        loadVerses(verse.verseNumber - 1)
-                    } else {
-                        loadVerses(0)
+                        lastReadVerseNumber = verse.verseNumber
                     }
+                    loadChapter()
                 }
                 .onFailure {
                     _uiState.value = HomeUiState.Error(it.message ?: "Unknown error")
@@ -101,7 +100,7 @@ class HomeViewModel(
         }
     }
 
-    private fun loadVerses(startIndex: Int = 0) {
+    private fun loadChapter() {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
             getVerses(currentTranslationId, currentBookId, currentChapterNumber)
@@ -110,8 +109,7 @@ class HomeViewModel(
                     if (verses.isEmpty()) {
                         _uiState.value = HomeUiState.Empty
                     } else {
-                        currentIndex = startIndex.coerceIn(0, verses.size - 1)
-                        updateCurrentVerse()
+                        updateState()
                     }
                 }
                 .onFailure {
@@ -120,60 +118,80 @@ class HomeViewModel(
         }
     }
 
-    private fun updateCurrentVerse() {
-        val verse = verses[currentIndex]
-        Log.d("HomeViewModel", "bookName=$currentBookName bookId=$currentBookId chapter=$currentChapterNumber verse=${verse.number}")
-        val lastRead = LastReadVerse(
-            translationId = currentTranslationId,
-            bookId = currentBookId,
+    private fun updateState() {
+        Log.d("HomeViewModel", "bookName=$currentBookName bookId=$currentBookId chapter=$currentChapterNumber")
+        _uiState.value = HomeUiState.Success(
             bookName = currentBookName,
             chapterNumber = currentChapterNumber,
-            verseNumber = verse.number,
-            verseText = verse.content.joinToString(" ") { it.toText() },
-        )
-        _uiState.value = HomeUiState.Success(
-            verse = lastRead,
-            hasPrevious = currentIndex > 0 || currentChapterNumber > 1,
+            translationId = currentTranslationId,
+            verses = verses,
+            hasPrevious = currentChapterNumber > 1,
             hasNext = true,
+            scrollToVerse = lastReadVerseNumber,
         )
+        // Save last read as first verse of chapter
         viewModelScope.launch {
-            saveLastReadVerse(lastRead)
+            saveLastReadVerse(
+                LastReadVerse(
+                    translationId = currentTranslationId,
+                    bookId = currentBookId,
+                    bookName = currentBookName,
+                    chapterNumber = currentChapterNumber,
+                    verseNumber = lastReadVerseNumber,
+                    verseText = verses.firstOrNull()?.content
+                        ?.joinToString(" ") { it.toText() } ?: "",
+                )
+            )
         }
     }
 
-    fun navigateNext() {
-        Log.d("HomeViewModel", "navigateNext: index=$currentIndex verses=${verses.size} chapter=$currentChapterNumber")
+    fun navigateNextChapter() {
         stopSpeaking()
-        if (currentIndex < verses.size - 1) {
-            currentIndex++
-            updateCurrentVerse()
-        } else {
-            Log.d("HomeViewModel", "navigateNext: moving to chapter ${currentChapterNumber + 1}")
-            currentChapterNumber++
-            currentIndex = 0
-            loadVerses(0)
-        }
+        currentChapterNumber++
+        lastReadVerseNumber = 1
+        loadChapter()
     }
 
-    fun navigatePrevious() {
+    fun navigatePreviousChapter() {
         stopSpeaking()
-        if (currentIndex > 0) {
-            currentIndex--
-            updateCurrentVerse()
-        } else if (currentChapterNumber > 1) {
+        if (currentChapterNumber > 1) {
             currentChapterNumber--
-            currentIndex = Int.MAX_VALUE
-            loadVerses(Int.MAX_VALUE)
+            lastReadVerseNumber = 1
+            loadChapter()
         }
     }
 
-    fun navigateToBook(bookId: String, bookName: String) {
+    fun navigateToBook(bookId: String, bookName: String, chapterNumber: Int = 1) {
         stopSpeaking()
         currentBookId = bookId
         currentBookName = bookName
-        currentChapterNumber = 1
-        currentIndex = 0
-        loadVerses(0)
+        currentChapterNumber = chapterNumber
+        lastReadVerseNumber = 1
+        loadChapter()
+    }
+
+    fun navigateToChapter(chapterNumber: Int) {
+        stopSpeaking()
+        currentChapterNumber = chapterNumber
+        lastReadVerseNumber = 1
+        loadChapter()
+    }
+
+    fun onVerseVisible(verseNumber: Int) {
+        lastReadVerseNumber = verseNumber
+        viewModelScope.launch {
+            saveLastReadVerse(
+                LastReadVerse(
+                    translationId = currentTranslationId,
+                    bookId = currentBookId,
+                    bookName = currentBookName,
+                    chapterNumber = currentChapterNumber,
+                    verseNumber = verseNumber,
+                    verseText = verses.find { it.number == verseNumber }
+                        ?.content?.joinToString(" ") { it.toText() } ?: "",
+                )
+            )
+        }
     }
 
     override fun onCleared() {
@@ -186,9 +204,13 @@ sealed class HomeUiState {
     object Loading : HomeUiState()
     object Empty : HomeUiState()
     data class Success(
-        val verse: LastReadVerse,
+        val bookName: String,
+        val chapterNumber: Int,
+        val translationId: String,
+        val verses: List<ChapterVerse>,
         val hasPrevious: Boolean,
         val hasNext: Boolean,
+        val scrollToVerse: Int = 1,
     ) : HomeUiState()
     data class Error(val message: String) : HomeUiState()
 }
@@ -197,5 +219,4 @@ data class TtsState(
     val isPlaying: Boolean = false,
     val availableVoices: List<android.speech.tts.Voice> = emptyList(),
     val currentVoice: android.speech.tts.Voice? = null,
-    val showVoiceSelector: Boolean = false,
 )
