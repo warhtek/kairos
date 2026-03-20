@@ -26,4 +26,13 @@ interface TranslationBookDao {
 
     @Query("SELECT * FROM translation_books ORDER BY `order` ASC")
     suspend fun getAll(): List<TranslationBookEntity>
+
+    @Query("SELECT * FROM translation_books WHERE id = :bookId LIMIT 1")
+    suspend fun getById(bookId: String): TranslationBookEntity?
+
+    @Query("SELECT * FROM translation_books WHERE `order` > (SELECT `order` FROM translation_books WHERE id = :bookId) ORDER BY `order` ASC LIMIT 1")
+    suspend fun getNextBook(bookId: String): TranslationBookEntity?
+
+    @Query("SELECT * FROM translation_books WHERE `order` < (SELECT `order` FROM translation_books WHERE id = :bookId) ORDER BY `order` DESC LIMIT 1")
+    suspend fun getPreviousBook(bookId: String): TranslationBookEntity?
 }

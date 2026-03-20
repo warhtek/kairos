@@ -10,6 +10,7 @@ import mobi.kairos.android.usecase.ImportTranslationBooksUseCase
 import mobi.kairos.android.usecase.ImportTranslationsUseCase
 import mobi.kairos.android.usecase.GetVersesUseCase
 import mobi.kairos.android.usecase.SaveLastReadVerseUseCase
+import mobi.kairos.android.usecase.SearchVerseUseCase
 
 val domainModule =
     module {
@@ -22,4 +23,5 @@ val domainModule =
         factory<GetVersesUseCase> { GetVersesUseCase(get()) }
         factory<SaveLastReadVerseUseCase> { SaveLastReadVerseUseCase(get()) }
         factory<GetTranslationsUseCase> { GetTranslationsUseCase(get()) }
+        factory<SearchVerseUseCase> { SearchVerseUseCase(get(), get()) }
     }

@@ -68,14 +68,21 @@ import mobi.kairos.android.ui.common.Clickable
 fun HomeScreen(
     onNavigateToBooks: () -> Unit,
     onNavigateToTranslations: () -> Unit,
+    onNavigateToSearch: () -> Unit,
     selectedBookId: String? = null,
     selectedBookName: String? = null,
     selectedChapterNumber: Int = 1,
+    selectedVerseNumber: Int = 1,
     onBookSelected: () -> Unit = {},
     viewModel: HomeViewModel = koinViewModel(),
 ) {
     if (selectedBookId != null && selectedBookName != null) {
-        viewModel.navigateToBook(selectedBookId, selectedBookName, selectedChapterNumber)
+        viewModel.navigateToBook(
+            selectedBookId,
+            selectedBookName,
+            selectedChapterNumber,
+            selectedVerseNumber,
+        )
         onBookSelected()
     }
 
@@ -136,6 +143,10 @@ fun HomeScreen(
                     }
                 },
                 actions = {
+                    // Search button
+                    IconButton(onClick = onNavigateToSearch) {
+                        Text("🔍", fontSize = 20.sp)
+                    }
                     // Voice selector
                     Box {
                         IconButton(onClick = { showVoiceMenu = true }) {

@@ -1,5 +1,6 @@
 package mobi.kairos.android.ui.home
 
+import mobi.kairos.android.repository.TranslationBookRepository
 import mobi.kairos.android.usecase.GetLastReadVerseUseCase
 import mobi.kairos.android.usecase.GetVersesUseCase
 import mobi.kairos.android.usecase.SaveLastReadVerseUseCase
@@ -12,6 +13,7 @@ val homeModule = module {
             get<GetLastReadVerseUseCase>(),
             get<GetVersesUseCase>(),
             get<SaveLastReadVerseUseCase>(),
+            get<TranslationBookRepository>(),
         )
     }
 }

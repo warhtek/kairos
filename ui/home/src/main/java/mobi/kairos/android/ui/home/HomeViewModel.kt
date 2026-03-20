@@ -25,11 +25,13 @@ import mobi.kairos.android.usecase.GetLastReadVerseUseCase
 import mobi.kairos.android.usecase.GetVersesUseCase
 import mobi.kairos.android.usecase.LastReadVerse
 import mobi.kairos.android.usecase.SaveLastReadVerseUseCase
+import mobi.kairos.android.repository.TranslationBookRepository
 
 class HomeViewModel(
     private val getLastReadVerse: GetLastReadVerseUseCase,
     private val getVerses: GetVersesUseCase,
     private val saveLastReadVerse: SaveLastReadVerseUseCase,
+    private val translationBookRepository: TranslationBookRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
@@ -147,26 +149,61 @@ class HomeViewModel(
 
     fun navigateNextChapter() {
         stopSpeaking()
-        currentChapterNumber++
-        lastReadVerseNumber = 1
-        loadChapter()
+        viewModelScope.launch {
+            // Check if current book has more chapters
+            val currentBook = translationBookRepository.getBookById(currentBookId)
+            if (currentBook != null && currentChapterNumber < currentBook.numberOfChapters) {
+                // Navigate to next chapter in same book
+                currentChapterNumber++
+                lastReadVerseNumber = 1
+                loadChapter()
+            } else {
+                // Navigate to first chapter of next book
+                val nextBook = translationBookRepository.getNextBook(currentBookId)
+                if (nextBook != null) {
+                    currentBookId = nextBook.id
+                    currentBookName = nextBook.name
+                    currentChapterNumber = 1
+                    lastReadVerseNumber = 1
+                    loadChapter()
+                }
+            }
+        }
     }
 
     fun navigatePreviousChapter() {
         stopSpeaking()
-        if (currentChapterNumber > 1) {
-            currentChapterNumber--
-            lastReadVerseNumber = 1
-            loadChapter()
+        viewModelScope.launch {
+            if (currentChapterNumber > 1) {
+                // Navigate to previous chapter in same book
+                currentChapterNumber--
+                lastReadVerseNumber = 1
+                loadChapter()
+            } else {
+                // Navigate to last chapter of previous book
+                val previousBook = translationBookRepository.getPreviousBook(currentBookId)
+                if (previousBook != null) {
+                    currentBookId = previousBook.id
+                    currentBookName = previousBook.name
+                    currentChapterNumber = previousBook.numberOfChapters
+                    lastReadVerseNumber = 1
+                    loadChapter()
+                }
+            }
         }
     }
 
-    fun navigateToBook(bookId: String, bookName: String, chapterNumber: Int = 1) {
+    fun navigateToBook(
+        bookId: String,
+        bookName: String,
+        chapterNumber: Int = 1,
+        verseNumber: Int = 1,
+    ) {
         stopSpeaking()
         currentBookId = bookId
         currentBookName = bookName
         currentChapterNumber = chapterNumber
-        lastReadVerseNumber = 1
+        lastReadVerseNumber = verseNumber
         loadChapter()
     }
 

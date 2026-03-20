@@ -16,4 +16,7 @@ interface TranslationBookRepository {
     suspend fun importBooks(books: List<TranslationBook>)
     suspend fun count(): Int
     suspend fun getBooks(): List<TranslationBook>
+    suspend fun getBookById(bookId: String): TranslationBook?
+    suspend fun getNextBook(bookId: String): TranslationBook?
+    suspend fun getPreviousBook(bookId: String): TranslationBook?
 }

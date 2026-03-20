@@ -15,9 +15,24 @@ import mobi.kairos.android.data.entity.toEntity
 import mobi.kairos.android.model.TranslationBook
 import mobi.kairos.android.repository.TranslationBookRepository
 
-class TranslationBookRepositoryImpl(private val translationBookDao: TranslationBookDao) : TranslationBookRepository {
-    override suspend fun importBooks(books: List<TranslationBook>) = translationBookDao.insertAll(books.map { it.toEntity() })
+class TranslationBookRepositoryImpl(
+    private val translationBookDao: TranslationBookDao,
+) : TranslationBookRepository {
+
+    override suspend fun importBooks(books: List<TranslationBook>) =
+        translationBookDao.insertAll(books.map { it.toEntity() })
+
     override suspend fun count() = translationBookDao.count()
+
     override suspend fun getBooks(): List<TranslationBook> =
         translationBookDao.getAll()
+
+    override suspend fun getBookById(bookId: String): TranslationBook? =
+        translationBookDao.getById(bookId)
+
+    override suspend fun getNextBook(bookId: String): TranslationBook? =
+        translationBookDao.getNextBook(bookId)
+
+    override suspend fun getPreviousBook(bookId: String): TranslationBook? =
+        translationBookDao.getPreviousBook(bookId)
 }
