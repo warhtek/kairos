@@ -81,6 +81,7 @@ dependencies {
     implementation(project(":ui:books"))
     implementation(project(":ui:translations"))
     implementation(project(":ui:search"))
+    implementation(project(":ui:splash"))
 
     implementation(libs.koin.core)
     implementation(libs.koin.android)

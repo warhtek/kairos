@@ -11,6 +11,7 @@
 package mobi.kairos.android
 
 sealed class KairosNav(val route: String) {
+    object Splash : KairosNav("SPLASH")
     object Home : KairosNav("HOME")
     object Books : KairosNav("BOOKS")
     object Translations : KairosNav("TRANSLATIONS")

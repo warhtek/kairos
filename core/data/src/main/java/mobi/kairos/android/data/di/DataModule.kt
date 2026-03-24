@@ -48,6 +48,8 @@ import mobi.kairos.android.data.resource.CompleteTranslationAssetImpl
 import mobi.kairos.android.parser.CompleteTranslationJsonParser
 import mobi.kairos.android.resource.CompleteTranslationAsset
 import mobi.kairos.android.usecase.ImportChaptersUseCase
+import mobi.kairos.android.data.repository.BibleApiRepositoryImpl
+import mobi.kairos.android.repository.BibleApiRepository
 
 
 val dataModule =
@@ -74,5 +76,6 @@ val dataModule =
         single<CompleteTranslationAsset> { CompleteTranslationAssetImpl(get()) }
         single<CompleteTranslationJsonParser> { CompleteTranslationJsonParserImpl() }
         factory<ImportChaptersUseCase> { ImportChaptersUseCase(get(), get(), get()) }
+        single<BibleApiRepository> { BibleApiRepositoryImpl() }
         includes(roomModule)
     }

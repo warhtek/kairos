@@ -10,6 +10,8 @@
  */
 package mobi.kairos.android.repository
 
+import mobi.kairos.android.model.AvailableFormat
+import mobi.kairos.android.model.TextDirection
 import mobi.kairos.android.model.Translation
 
 interface TranslationRepository {
@@ -18,4 +20,26 @@ interface TranslationRepository {
     suspend fun count(): Int
     suspend fun getTranslations(): List<Translation>
 
+}
+
+interface Translation {
+    val id: String
+    val name: String
+    val englishName: String
+    val website: String
+    val licenseUrl: String
+    val shortName: String
+    val language: String
+    val languageName: String?
+    val languageEnglishName: String?
+    val textDirection: TextDirection
+    val availableFormats: List<AvailableFormat>
+    val listOfBooksApiLink: String
+    val numberOfBooks: Int
+    val totalNumberOfChapters: Int
+    val totalNumberOfVerses: Int
+    val numberOfApocryphalBooks: Int?
+    val totalNumberOfApocryphalChapters: Int?
+    val totalNumberOfApocryphalVerses: Int?
+    val completeTranslationApiLink: String?  // Add this
 }

@@ -24,7 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
@@ -73,7 +73,9 @@ fun HomeScreen(
     selectedBookName: String? = null,
     selectedChapterNumber: Int = 1,
     selectedVerseNumber: Int = 1,
+    selectedTranslationId: String? = null,
     onBookSelected: () -> Unit = {},
+    onTranslationChanged: () -> Unit = {},
     viewModel: HomeViewModel = koinViewModel(),
 ) {
     if (selectedBookId != null && selectedBookName != null) {
@@ -86,6 +88,10 @@ fun HomeScreen(
         onBookSelected()
     }
 
+    if (selectedTranslationId != null) {
+        viewModel.changeTranslation(selectedTranslationId)
+        onTranslationChanged()
+    }
     val context = LocalContext.current
 
     DisposableEffect(Unit) {
@@ -276,6 +282,8 @@ fun HomeScreen(
                     verses = state.verses,
                     scrollToVerse = state.scrollToVerse,
                     onVerseVisible = { viewModel.onVerseVisible(it) },
+                    highlightStart = ttsState.highlightStart,
+                    highlightEnd = ttsState.highlightEnd,
                 )
 
                 is HomeUiState.Error -> Text(
@@ -294,13 +302,25 @@ private fun ChapterContent(
     verses: List<ChapterVerse>,
     scrollToVerse: Int,
     onVerseVisible: (Int) -> Unit,
+    highlightStart: Int = -1,
+    highlightEnd: Int = -1,
 ) {
     val listState = rememberLazyListState()
 
-    // Scroll to last read verse
     LaunchedEffect(scrollToVerse) {
         val index = verses.indexOfFirst { it.number == scrollToVerse }
         if (index >= 0) listState.animateScrollToItem(index)
+    }
+
+    // Calculate verse offsets for highlight mapping
+    val verseOffsets = remember(verses) {
+        var offset = 0
+        verses.map { verse ->
+            val text = verse.content.joinToString(" ") { it.toText() }
+            val start = offset
+            offset += text.length + 1
+            start
+        }
     }
 
     LazyColumn(
@@ -308,10 +328,13 @@ private fun ChapterContent(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
     ) {
-        items(verses) { verse ->
+        itemsIndexed(verses) { index, verse ->
             VerseItem(
                 verse = verse,
                 onVisible = { onVerseVisible(verse.number) },
+                highlightStart = highlightStart,
+                highlightEnd = highlightEnd,
+                verseOffset = verseOffsets.getOrElse(index) { 0 },
             )
             Spacer(modifier = Modifier.height(8.dp))
         }
@@ -322,13 +345,25 @@ private fun ChapterContent(
 private fun VerseItem(
     verse: ChapterVerse,
     onVisible: () -> Unit,
+    highlightStart: Int = -1,
+    highlightEnd: Int = -1,
+    verseOffset: Int = 0,
 ) {
     LaunchedEffect(verse.number) {
         onVisible()
     }
 
+    val verseText = verse.content.joinToString(" ") { it.toText() }
+    val verseStart = verseOffset
+    val verseEnd = verseOffset + verseText.length
+
+    // Check if highlight is within this verse
+    val localStart = (highlightStart - verseStart).coerceAtLeast(0)
+    val localEnd = (highlightEnd - verseStart).coerceAtMost(verseText.length)
+    val isHighlighted = highlightStart >= verseStart && highlightStart < verseEnd
+
     val text = buildAnnotatedString {
-        // Verse number in superscript style
+        // Verse number
         withStyle(
             SpanStyle(
                 fontSize = 12.sp,
@@ -338,13 +373,20 @@ private fun VerseItem(
         ) {
             append("${verse.number} ")
         }
-        // Verse text
-        withStyle(
-            SpanStyle(
-                fontSize = 22.sp,
-            )
-        ) {
-            append(verse.content.joinToString(" ") { it.toText() })
+        // Verse text with optional highlight
+        if (isHighlighted && localEnd > localStart) {
+            append(verseText.substring(0, localStart))
+            withStyle(
+                SpanStyle(
+                    background = MaterialTheme.colorScheme.primaryContainer,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            ) {
+                append(verseText.substring(localStart, localEnd))
+            }
+            append(verseText.substring(localEnd))
+        } else {
+            append(verseText)
         }
     }
 
@@ -352,6 +394,7 @@ private fun VerseItem(
         text = text,
         style = MaterialTheme.typography.bodyLarge,
         lineHeight = 36.sp,
+        fontSize = 22.sp,
         modifier = Modifier.fillMaxWidth(),
     )
 }

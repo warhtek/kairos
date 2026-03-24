@@ -12,6 +12,7 @@ package mobi.kairos.android.ui.home
 
 import android.content.Context
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.speech.tts.Voice
 import java.util.Locale
 
@@ -30,6 +31,7 @@ class KairosTtsManager(context: Context) : TextToSpeech.OnInitListener {
         private set
 
     var onPlayingChanged: ((Boolean) -> Unit)? = null
+    var onRangeStart: ((start: Int, end: Int) -> Unit)? = null
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
@@ -52,15 +54,24 @@ class KairosTtsManager(context: Context) : TextToSpeech.OnInitListener {
         tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "kairos_utterance")
         isPlaying = true
         onPlayingChanged?.invoke(true)
-        tts.setOnUtteranceProgressListener(object : android.speech.tts.UtteranceProgressListener() {
+        tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(utteranceId: String?) {}
+
             override fun onDone(utteranceId: String?) {
                 isPlaying = false
                 onPlayingChanged?.invoke(false)
+                onRangeStart?.invoke(-1, -1)
             }
+
             override fun onError(utteranceId: String?) {
                 isPlaying = false
                 onPlayingChanged?.invoke(false)
+                onRangeStart?.invoke(-1, -1)
+            }
+
+            // Called for each word being spoken
+            override fun onRangeStart(utteranceId: String?, start: Int, end: Int, frame: Int) {
+                onRangeStart?.invoke(start, end)
             }
         })
     }
@@ -69,6 +80,7 @@ class KairosTtsManager(context: Context) : TextToSpeech.OnInitListener {
         tts.stop()
         isPlaying = false
         onPlayingChanged?.invoke(false)
+        onRangeStart?.invoke(-1, -1)
     }
 
     fun setVoice(voice: Voice) {

@@ -21,6 +21,7 @@ import androidx.navigation.compose.rememberNavController
 import mobi.kairos.android.ui.books.BooksScreen
 import mobi.kairos.android.ui.home.HomeScreen
 import mobi.kairos.android.ui.search.SearchScreen
+import mobi.kairos.android.ui.splash.SplashScreen
 import mobi.kairos.android.ui.translations.TranslationsScreen
 
 @Composable
@@ -30,12 +31,30 @@ fun KairosUI() {
     var selectedBookName by remember { mutableStateOf<String?>(null) }
     var selectedChapterNumber by remember { mutableStateOf(1) }
     var selectedVerseNumber by remember { mutableStateOf(1) }
-    var currentTranslationId by remember { mutableStateOf("spa_bes") }
+    var currentTranslationId by remember { mutableStateOf<String?>(null) }
 
     NavHost(
         navController = navController,
-        startDestination = KairosNav.Home.route,
+        startDestination = KairosNav.Splash.route,
     ) {
+        composable(KairosNav.Splash.route) {
+            SplashScreen(
+                onDailyVerseClick = { bookId, bookName, chapterNumber, verseNumber ->
+                    selectedBookId = bookId
+                    selectedBookName = bookName
+                    selectedChapterNumber = chapterNumber
+                    selectedVerseNumber = verseNumber
+                    navController.navigate(KairosNav.Home.route) {
+                        popUpTo(KairosNav.Splash.route) { inclusive = true }
+                    }
+                },
+                onContinueClick = {
+                    navController.navigate(KairosNav.Home.route) {
+                        popUpTo(KairosNav.Splash.route) { inclusive = true }
+                    }
+                },
+            )
+        }
         composable(KairosNav.Home.route) {
             HomeScreen(
                 onNavigateToBooks = {
@@ -51,11 +70,15 @@ fun KairosUI() {
                 selectedBookName = selectedBookName,
                 selectedChapterNumber = selectedChapterNumber,
                 selectedVerseNumber = selectedVerseNumber,
+                selectedTranslationId = currentTranslationId,
                 onBookSelected = {
                     selectedBookId = null
                     selectedBookName = null
                     selectedChapterNumber = 1
                     selectedVerseNumber = 1
+                },
+                onTranslationChanged = {
+                    currentTranslationId = null
                 },
             )
         }
@@ -80,7 +103,7 @@ fun KairosUI() {
         }
         composable(KairosNav.Search.route) {
             SearchScreen(
-                translationId = currentTranslationId,
+                translationId = currentTranslationId ?: "spa_bes",
                 onResultClick = { bookId, bookName, chapterNumber, verseNumber ->
                     selectedBookId = bookId
                     selectedBookName = bookName
