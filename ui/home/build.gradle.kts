@@ -21,6 +21,10 @@ android {
 dependencies {
     implementation(project(":ui:common"))
     implementation(project(":core:domain"))
+    implementation(project(":ui:books"))
+    implementation(project(":ui:search"))
+    implementation(project(":ui:translations"))
+    implementation(project(":ui:splash"))
     implementation(libs.koin.core)
     implementation(libs.koin.android)
     implementation(platform(libs.androidx.compose.bom))
@@ -33,4 +37,5 @@ dependencies {
     implementation(libs.koin.androidx.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.compose.material.icons)
+    implementation("androidx.compose.material:material-icons-extended:1.7.5")
 }

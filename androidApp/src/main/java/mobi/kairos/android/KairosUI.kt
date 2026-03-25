@@ -18,11 +18,8 @@ import androidx.compose.runtime.setValue
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import mobi.kairos.android.ui.books.BooksScreen
 import mobi.kairos.android.ui.home.HomeScreen
-import mobi.kairos.android.ui.search.SearchScreen
 import mobi.kairos.android.ui.splash.SplashScreen
-import mobi.kairos.android.ui.translations.TranslationsScreen
 
 @Composable
 fun KairosUI() {
@@ -57,15 +54,6 @@ fun KairosUI() {
         }
         composable(KairosNav.Home.route) {
             HomeScreen(
-                onNavigateToBooks = {
-                    navController.navigate(KairosNav.Books.route)
-                },
-                onNavigateToTranslations = {
-                    navController.navigate(KairosNav.Translations.route)
-                },
-                onNavigateToSearch = {
-                    navController.navigate(KairosNav.Search.route)
-                },
                 selectedBookId = selectedBookId,
                 selectedBookName = selectedBookName,
                 selectedChapterNumber = selectedChapterNumber,
@@ -79,37 +67,6 @@ fun KairosUI() {
                 },
                 onTranslationChanged = {
                     currentTranslationId = null
-                },
-            )
-        }
-        composable(KairosNav.Books.route) {
-            BooksScreen(
-                onBookClick = { bookId, bookName, chapterNumber ->
-                    selectedBookId = bookId
-                    selectedBookName = bookName
-                    selectedChapterNumber = chapterNumber
-                    selectedVerseNumber = 1
-                    navController.popBackStack()
-                },
-            )
-        }
-        composable(KairosNav.Translations.route) {
-            TranslationsScreen(
-                onTranslationSelected = { translationId ->
-                    currentTranslationId = translationId
-                    navController.popBackStack()
-                },
-            )
-        }
-        composable(KairosNav.Search.route) {
-            SearchScreen(
-                translationId = currentTranslationId ?: "spa_bes",
-                onResultClick = { bookId, bookName, chapterNumber, verseNumber ->
-                    selectedBookId = bookId
-                    selectedBookName = bookName
-                    selectedChapterNumber = chapterNumber
-                    selectedVerseNumber = verseNumber
-                    navController.popBackStack()
                 },
             )
         }

@@ -22,31 +22,50 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Today
+import androidx.compose.material.icons.filled.Translate
+import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.outlined.Book
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Today
+import androidx.compose.material.icons.outlined.Translate
+import androidx.compose.material.icons.outlined.VolumeUp
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,20 +74,23 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import mobi.kairos.android.model.ChapterVerse
-import org.koin.androidx.compose.koinViewModel
+import mobi.kairos.android.ui.books.BooksViewModel
 import mobi.kairos.android.ui.common.Clickable
+import mobi.kairos.android.ui.search.SearchViewModel
+import mobi.kairos.android.ui.splash.SplashViewModel
+import mobi.kairos.android.ui.translations.TranslationsViewModel
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onNavigateToBooks: () -> Unit,
-    onNavigateToTranslations: () -> Unit,
-    onNavigateToSearch: () -> Unit,
     selectedBookId: String? = null,
     selectedBookName: String? = null,
     selectedChapterNumber: Int = 1,
@@ -77,6 +99,10 @@ fun HomeScreen(
     onBookSelected: () -> Unit = {},
     onTranslationChanged: () -> Unit = {},
     viewModel: HomeViewModel = koinViewModel(),
+    booksViewModel: BooksViewModel = koinViewModel(),
+    translationsViewModel: TranslationsViewModel = koinViewModel(),
+    searchViewModel: SearchViewModel = koinViewModel(),
+    splashViewModel: SplashViewModel = koinViewModel(),
 ) {
     if (selectedBookId != null && selectedBookName != null) {
         viewModel.navigateToBook(
@@ -92,7 +118,9 @@ fun HomeScreen(
         viewModel.changeTranslation(selectedTranslationId)
         onTranslationChanged()
     }
+
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     DisposableEffect(Unit) {
         viewModel.initTts(context)
@@ -101,7 +129,24 @@ fun HomeScreen(
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val ttsState by viewModel.ttsState.collectAsStateWithLifecycle()
-    var showVoiceMenu by remember { mutableStateOf(false) }
+    val booksUiState by booksViewModel.uiState.collectAsStateWithLifecycle()
+    val translationsUiState by translationsViewModel.uiState.collectAsStateWithLifecycle()
+    val searchUiState by searchViewModel.uiState.collectAsStateWithLifecycle()
+    val searchQuery by searchViewModel.query.collectAsStateWithLifecycle()
+
+    // Bottom sheet states
+    val booksSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val translationsSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val searchSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val voiceSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+
+    var showBooksSheet by remember { mutableStateOf(false) }
+    var showTranslationsSheet by remember { mutableStateOf(false) }
+    var showSearchSheet by remember { mutableStateOf(false) }
+    var showVoiceSheet by remember { mutableStateOf(false) }
+    var expandedBookId by remember { mutableStateOf<String?>(null) }
+    var sortAlphabetically by remember { mutableStateOf(false) }
+    var showDailyVerseSheet by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -115,7 +160,7 @@ fun HomeScreen(
                             ) {
                                 // Book + chapter button
                                 TextButton(
-                                    onClick = onNavigateToBooks,
+                                    onClick = { showBooksSheet = true },
                                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
                                 ) {
                                     Text(
@@ -125,8 +170,8 @@ fun HomeScreen(
                                         color = MaterialTheme.colorScheme.onSurface,
                                     )
                                 }
-                                // Translation badge - navigates to translations screen
-                                Clickable(onClick = onNavigateToTranslations) {
+                                // Translation badge
+                                Clickable(onClick = { showTranslationsSheet = true }) {
                                     Box(
                                         modifier = Modifier
                                             .background(
@@ -150,51 +195,20 @@ fun HomeScreen(
                 },
                 actions = {
                     // Search button
-                    IconButton(onClick = onNavigateToSearch) {
-                        Text("🔍", fontSize = 20.sp)
+                    IconButton(onClick = { showSearchSheet = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Buscar",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     }
-                    // Voice selector
-                    Box {
-                        IconButton(onClick = { showVoiceMenu = true }) {
-                            Text("🔊", fontSize = 20.sp)
-                        }
-                        DropdownMenu(
-                            expanded = showVoiceMenu,
-                            onDismissRequest = { showVoiceMenu = false },
-                        ) {
-                            if (ttsState.availableVoices.isEmpty()) {
-                                DropdownMenuItem(
-                                    text = { Text("No voices available") },
-                                    onClick = { showVoiceMenu = false },
-                                )
-                            } else {
-                                ttsState.availableVoices.forEach { voice ->
-                                    DropdownMenuItem(
-                                        text = { Text(voice.name) },
-                                        onClick = {
-                                            viewModel.setVoice(voice)
-                                            showVoiceMenu = false
-                                        },
-                                    )
-                                }
-                            }
-                            HorizontalDivider()
-                            // Install more voices option
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        text = "+ Instalar más voces",
-                                        color = MaterialTheme.colorScheme.primary,
-                                    )
-                                },
-                                onClick = {
-                                    showVoiceMenu = false
-                                    val intent = android.content.Intent()
-                                    intent.action = "com.android.settings.TTS_SETTINGS"
-                                    context.startActivity(intent)
-                                },
-                            )
-                        }
+                    // Voice button
+                    IconButton(onClick = { showVoiceSheet = true }) {
+                        Icon(
+                            imageVector = Icons.Default.VolumeUp,
+                            contentDescription = "Voz",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 },
             )
@@ -224,15 +238,12 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        // Previous chapter
                         TextButton(
                             onClick = { viewModel.navigatePreviousChapter() },
                             enabled = state.hasPrevious,
                         ) {
                             Text("< ${state.chapterNumber - 1}".takeIf { state.hasPrevious } ?: "<")
                         }
-
-                        // Play/stop floating button
                         FilledTonalIconButton(
                             onClick = {
                                 if (ttsState.isPlaying) viewModel.stopSpeaking()
@@ -242,13 +253,13 @@ fun HomeScreen(
                                 .size(56.dp)
                                 .clip(CircleShape),
                         ) {
-                            Text(
-                                text = if (ttsState.isPlaying) "■" else "▶",
-                                fontSize = 20.sp,
+                            Icon(
+                                imageVector = if (ttsState.isPlaying) Icons.Default.Stop else Icons.Default.PlayArrow,
+                                contentDescription = if (ttsState.isPlaying) "Detener" else "Reproducir",
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(24.dp)
                             )
                         }
-
-                        // Next chapter
                         TextButton(
                             onClick = { viewModel.navigateNextChapter() },
                             enabled = state.hasNext,
@@ -257,6 +268,101 @@ fun HomeScreen(
                         }
                     }
                     else -> {}
+                }
+                // Bottom action bar
+                HorizontalDivider()
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    // Books
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        IconButton(onClick = { showBooksSheet = true }) {
+                            Icon(
+                                imageVector = Icons.Default.MenuBook,
+                                contentDescription = "Libros",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Text(
+                            text = "Libros",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    // Search
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        IconButton(onClick = { showSearchSheet = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Buscar",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Text(
+                            text = "Buscar",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    // Daily verse
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        IconButton(onClick = { showDailyVerseSheet = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Today,
+                                contentDescription = "Versículo del día",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Text(
+                            text = "Hoy",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    // Translations
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        IconButton(onClick = { showTranslationsSheet = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Translate,
+                                contentDescription = "Versiones",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Text(
+                            text = "Versión",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    // Voice
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        IconButton(onClick = { showVoiceSheet = true }) {
+                            Icon(
+                                imageVector = Icons.Default.VolumeUp,
+                                contentDescription = "Voz",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Text(
+                            text = "Voz",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         },
@@ -270,14 +376,10 @@ fun HomeScreen(
                 is HomeUiState.Loading -> CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
                 )
-
                 is HomeUiState.Empty -> Text(
                     text = "No hay versículos disponibles",
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(24.dp),
+                    modifier = Modifier.align(Alignment.Center).padding(24.dp),
                 )
-
                 is HomeUiState.Success -> ChapterContent(
                     verses = state.verses,
                     scrollToVerse = state.scrollToVerse,
@@ -285,13 +387,428 @@ fun HomeScreen(
                     highlightStart = ttsState.highlightStart,
                     highlightEnd = ttsState.highlightEnd,
                 )
-
                 is HomeUiState.Error -> Text(
                     text = "Error: ${state.message}",
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(24.dp),
+                    modifier = Modifier.align(Alignment.Center).padding(24.dp),
                 )
+            }
+        }
+    }
+
+    // Daily verse bottom sheet
+    if (showDailyVerseSheet) {
+        val dailyUiState by splashViewModel.uiState.collectAsStateWithLifecycle()
+        ModalBottomSheet(
+            onDismissRequest = { showDailyVerseSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(24.dp)
+                    .padding(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = "Versículo del día",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                HorizontalDivider()
+                when (val state = dailyUiState) {
+                    is mobi.kairos.android.ui.splash.SplashUiState.Loading ->
+                        CircularProgressIndicator()
+                    is mobi.kairos.android.ui.splash.SplashUiState.Success -> {
+                        Text(
+                            text = "${state.verse.bookName} ${state.verse.chapterNumber}:${state.verse.verseNumber}",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        Text(
+                            text = "\"${state.verse.verseText}\"",
+                            style = MaterialTheme.typography.bodyLarge,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        )
+                        Button(
+                            onClick = {
+                                viewModel.navigateToBook(
+                                    state.verse.bookId,
+                                    state.verse.bookName,
+                                    state.verse.chapterNumber,
+                                    state.verse.verseNumber,
+                                )
+                                showDailyVerseSheet = false
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("Ir al versículo")
+                        }
+                    }
+                    else -> Text("No disponible")
+                }
+            }
+        }
+    }
+
+    // Books bottom sheet
+    if (showBooksSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBooksSheet = false },
+            sheetState = booksSheetState,
+        ) {
+            Column(modifier = Modifier.padding(bottom = 32.dp)) {
+                // Header
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextButton(onClick = { showBooksSheet = false }) {
+                        Text("Cancelar")
+                    }
+                    Text(
+                        text = "Libros",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    // Sort toggle
+                    TextButton(onClick = { sortAlphabetically = !sortAlphabetically }) {
+                        Text(if (sortAlphabetically) "Tradicional" else "Alfabético")
+                    }
+                }
+                HorizontalDivider()
+
+                when (val state = booksUiState) {
+                    is mobi.kairos.android.ui.books.BooksUiState.Loading ->
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                    is mobi.kairos.android.ui.books.BooksUiState.Success -> {
+                        val books = if (sortAlphabetically) state.books.sortedBy { it.name }
+                        else state.books.sortedBy { it.order }
+                        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                            items(books) { book ->
+                                Column {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Text(
+                                            text = book.name.uppercase(),
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            fontWeight = if (expandedBookId == book.id) FontWeight.Bold else FontWeight.Normal,
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                        Clickable(onClick = {
+                                            expandedBookId = if (expandedBookId == book.id) null else book.id
+                                        }) {
+                                            Text(
+                                                text = if (expandedBookId == book.id) "∧" else "∨",
+                                                fontSize = 18.sp,
+                                                modifier = Modifier.padding(8.dp),
+                                            )
+                                        }
+                                    }
+                                    if (expandedBookId == book.id) {
+                                        // Chapters grid
+                                        val chapters = (book.firstChapterNumber..<book.firstChapterNumber + book.numberOfChapters).toList()
+                                        val rows = chapters.chunked(5)
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(bottom = 32.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                                        ) {
+                                            rows.forEach { rowChapters ->
+                                                Row(
+                                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                ) {
+                                                    rowChapters.forEach { chapter ->
+                                                        Clickable(
+                                                            modifier = Modifier
+                                                                .size(52.dp)
+                                                                .clip(RoundedCornerShape(8.dp))
+                                                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                                                            onClick = {
+                                                                viewModel.navigateToBook(book.id, book.name, chapter, 1)
+                                                                scope.launch { booksSheetState.hide() }
+                                                                showBooksSheet = false
+                                                            },
+                                                        ) {
+                                                            Box(
+                                                                modifier = Modifier.fillMaxSize(),
+                                                                contentAlignment = Alignment.Center,
+                                                            ) {
+                                                                Text(
+                                                                    text = "$chapter",
+                                                                    style = MaterialTheme.typography.bodyMedium,
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                                }
+                            }
+                        }
+                    }
+                    else -> {}
+                }
+            }
+        }
+    }
+
+    // Translations bottom sheet
+    if (showTranslationsSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showTranslationsSheet = false },
+            sheetState = translationsSheetState,
+        ) {
+            Column(modifier = Modifier.padding(bottom = 32.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextButton(onClick = { showTranslationsSheet = false }) {
+                        Text("Cancelar")
+                    }
+                    Text(
+                        text = "Mis versiones",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Spacer(modifier = Modifier.size(64.dp))
+                }
+                HorizontalDivider()
+                when (val state = translationsUiState) {
+                    is mobi.kairos.android.ui.translations.TranslationsUiState.Success -> {
+                        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                            items(state.translations) { translation ->
+                                Clickable(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    onClick = {
+                                        viewModel.changeTranslation(translation.id)
+                                        scope.launch { translationsSheetState.hide() }
+                                        showTranslationsSheet = false
+                                    },
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 12.dp, horizontal = 16.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(64.dp)
+                                                .clip(RoundedCornerShape(12.dp))
+                                                .background(MaterialTheme.colorScheme.secondaryContainer),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            Text(
+                                                text = translation.shortName.take(4),
+                                                style = MaterialTheme.typography.labelLarge,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            )
+                                        }
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = translation.languageName ?: translation.language,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                            Text(
+                                                text = translation.name,
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                fontWeight = FontWeight.Medium,
+                                            )
+                                        }
+                                    }
+                                }
+                                HorizontalDivider(modifier = Modifier.padding(start = 88.dp))
+                            }
+                        }
+                    }
+                    else -> CircularProgressIndicator(
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .padding(32.dp),
+                    )
+                }
+            }
+        }
+    }
+
+    // Search bottom sheet
+    if (showSearchSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showSearchSheet = false },
+            sheetState = searchSheetState,
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Text(
+                    text = "Buscar versículo",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = "Ejemplo: Génesis 3:3",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchViewModel.onQueryChanged(it) },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Ej: Génesis 3:3") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(
+                        onSearch = {
+                            searchViewModel.search(
+                                (uiState as? HomeUiState.Success)?.translationId ?: "spa_bes"
+                            )
+                        },
+                    ),
+                )
+                Button(
+                    onClick = {
+                        searchViewModel.search(
+                            (uiState as? HomeUiState.Success)?.translationId ?: "spa_bes"
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Buscar")
+                }
+                when (val state = searchUiState) {
+                    is mobi.kairos.android.ui.search.SearchUiState.Loading ->
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                    is mobi.kairos.android.ui.search.SearchUiState.NotFound ->
+                        Text(
+                            text = "No se encontró el versículo",
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    is mobi.kairos.android.ui.search.SearchUiState.Success -> {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                text = "${state.result.bookName} ${state.result.chapterNumber}:${state.result.verseNumber}",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                            Text(text = state.result.verseText)
+                            Button(
+                                onClick = {
+                                    viewModel.navigateToBook(
+                                        state.result.bookId,
+                                        state.result.bookName,
+                                        state.result.chapterNumber,
+                                        state.result.verseNumber,
+                                    )
+                                    scope.launch { searchSheetState.hide() }
+                                    showSearchSheet = false
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text("Ir al versículo")
+                            }
+                        }
+                    }
+                    else -> {}
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+    }
+
+    // Voice bottom sheet
+    if (showVoiceSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showVoiceSheet = false },
+            sheetState = voiceSheetState,
+        ) {
+            Column(
+                modifier = Modifier.padding(bottom = 32.dp),
+            ) {
+                Text(
+                    text = "Seleccionar voz",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(16.dp),
+                )
+                HorizontalDivider()
+                if (ttsState.availableVoices.isEmpty()) {
+                    Text(
+                        text = "No hay voces disponibles",
+                        modifier = Modifier.padding(16.dp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    LazyColumn {
+                        items(ttsState.availableVoices) { voice ->
+                            Clickable(
+                                modifier = Modifier.fillMaxWidth(),
+                                onClick = {
+                                    viewModel.setVoice(voice)
+                                    scope.launch { voiceSheetState.hide() }
+                                    showVoiceSheet = false
+                                },
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(text = voice.name)
+                                    if (ttsState.currentVoice?.name == voice.name) {
+                                        Text(
+                                            text = "✓",
+                                            color = MaterialTheme.colorScheme.primary,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                    }
+                                }
+                            }
+                            HorizontalDivider()
+                        }
+                    }
+                }
+                // Install more voices
+                Clickable(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        val intent = android.content.Intent()
+                        intent.action = "com.android.settings.TTS_SETTINGS"
+                        context.startActivity(intent)
+                        showVoiceSheet = false
+                    },
+                ) {
+                    Text(
+                        text = "+ Instalar más voces",
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(16.dp),
+                    )
+                }
             }
         }
     }
@@ -312,7 +829,6 @@ private fun ChapterContent(
         if (index >= 0) listState.animateScrollToItem(index)
     }
 
-    // Calculate verse offsets for highlight mapping
     val verseOffsets = remember(verses) {
         var offset = 0
         verses.map { verse ->
@@ -356,32 +872,17 @@ private fun VerseItem(
     val verseText = verse.content.joinToString(" ") { it.toText() }
     val verseStart = verseOffset
     val verseEnd = verseOffset + verseText.length
-
-    // Check if highlight is within this verse
     val localStart = (highlightStart - verseStart).coerceAtLeast(0)
     val localEnd = (highlightEnd - verseStart).coerceAtMost(verseText.length)
     val isHighlighted = highlightStart >= verseStart && highlightStart < verseEnd
 
     val text = buildAnnotatedString {
-        // Verse number
-        withStyle(
-            SpanStyle(
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = androidx.compose.ui.graphics.Color.Gray,
-            )
-        ) {
+        withStyle(SpanStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color.Gray)) {
             append("${verse.number} ")
         }
-        // Verse text with optional highlight
         if (isHighlighted && localEnd > localStart) {
             append(verseText.substring(0, localStart))
-            withStyle(
-                SpanStyle(
-                    background = MaterialTheme.colorScheme.primaryContainer,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
-            ) {
+            withStyle(SpanStyle(background = MaterialTheme.colorScheme.primaryContainer, color = MaterialTheme.colorScheme.onPrimaryContainer)) {
                 append(verseText.substring(localStart, localEnd))
             }
             append(verseText.substring(localEnd))
