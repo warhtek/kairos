@@ -60,7 +60,7 @@ class MainActivity : ComponentActivity() {
                 else -> if (darkTheme) darkColorScheme() else lightColorScheme()
             }
             MaterialTheme(colorScheme = colorScheme) {
-                KairosUI()
+                KairosUI() // <-- CORREGIDO: Sin parámetros
             }
         }
     }

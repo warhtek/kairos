@@ -45,7 +45,12 @@ fun KairosUI() {
                         popUpTo(KairosNav.Splash.route) { inclusive = true }
                     }
                 },
-                onContinueClick = {
+                onBibleClick = {
+                    // Navegar al home sin seleccionar ningún versículo específico
+                    selectedBookId = null
+                    selectedBookName = null
+                    selectedChapterNumber = 1
+                    selectedVerseNumber = 1
                     navController.navigate(KairosNav.Home.route) {
                         popUpTo(KairosNav.Splash.route) { inclusive = true }
                     }
