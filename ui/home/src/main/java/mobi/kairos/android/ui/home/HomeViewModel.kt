@@ -19,6 +19,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import mobi.kairos.android.model.ChapterVerse
 import mobi.kairos.android.repository.TranslationBookRepository
@@ -34,7 +35,8 @@ class HomeViewModel(
     private val saveLastReadVerse: SaveLastReadVerseUseCase,
     private val translationBookRepository: TranslationBookRepository,
     private val getOrDownloadChapter: GetOrDownloadChapterUseCase,
-) : ViewModel() {
+
+    ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -49,10 +51,9 @@ class HomeViewModel(
     private var currentBookName: String = "Génesis"
     private var currentChapterNumber: Int = 1
     private var lastReadVerseNumber: Int = 1
-
-    init {
-        loadLastReadVerse()
-    }
+    private var isNavigatingFromSplash: Boolean = false
+    private var isInitialLoadCompleted: Boolean = false
+    private var pendingLastReadVerse: LastReadVerse? = null
 
     fun initTts(context: Context) {
         ttsManager = KairosTtsManager(context).also { manager ->
@@ -100,28 +101,65 @@ class HomeViewModel(
         loadChapter()
     }
 
-    private fun loadLastReadVerse() {
+    // Load last read verse - used when navigating to Bible from splash
+    fun loadLastReadVerse() {
         viewModelScope.launch {
             getLastReadVerse()
                 .onSuccess { verse ->
                     if (verse != null) {
-                        currentTranslationId = verse.translationId
-                        currentBookId = verse.bookId
-                        currentBookName = verse.bookName
-                        currentChapterNumber = verse.chapterNumber
-                        lastReadVerseNumber = verse.verseNumber
+                        Log.d("HomeViewModel", "Loading last read verse: ${verse.bookName} ${verse.chapterNumber}:${verse.verseNumber}")
+                        pendingLastReadVerse = verse
+
+                        if (!isNavigatingFromSplash && !isInitialLoadCompleted) {
+                            // Initial app launch - load last read verse
+                            applyLastReadVerse(verse)
+                        } else if (isNavigatingFromSplash) {
+                            // Navigating from Bible button - load last read verse
+                            applyLastReadVerse(verse)
+                            isNavigatingFromSplash = false
+                        }
+                    } else {
+                        Log.d("HomeViewModel", "No last read verse found, using default: Genesis 1:1")
+                        // No saved verse, use default
+                        if (!isInitialLoadCompleted) {
+                            applyDefaultBook()
+                        }
                     }
+                    isInitialLoadCompleted = true
                     loadChapter()
                 }
                 .onFailure {
-                    _uiState.value = HomeUiState.Error(it.message ?: "Unknown error")
+                    Log.e("HomeViewModel", "Failed to load last read verse", it)
+                    if (!isInitialLoadCompleted) {
+                        applyDefaultBook()
+                    }
+                    isInitialLoadCompleted = true
+                    loadChapter()
                 }
         }
+    }
+
+    private fun applyLastReadVerse(verse: LastReadVerse) {
+        currentTranslationId = verse.translationId
+        currentBookId = verse.bookId
+        currentBookName = verse.bookName
+        currentChapterNumber = verse.chapterNumber
+        lastReadVerseNumber = verse.verseNumber
+        Log.d("HomeViewModel", "Applied last read verse: $currentBookName $currentChapterNumber:$lastReadVerseNumber")
+    }
+
+    private fun applyDefaultBook() {
+        currentBookId = "GEN"
+        currentBookName = "Génesis"
+        currentChapterNumber = 1
+        lastReadVerseNumber = 1
+        Log.d("HomeViewModel", "Applied default book: Genesis 1:1")
     }
 
     private fun loadChapter() {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
+            Log.d("HomeViewModel", "Loading chapter: translation=$currentTranslationId, book=$currentBookId, chapter=$currentChapterNumber")
             getOrDownloadChapter(currentTranslationId, currentBookId, currentChapterNumber)
                 .onSuccess { chapter ->
                     verses = chapter.chapter.content
@@ -133,13 +171,14 @@ class HomeViewModel(
                     }
                 }
                 .onFailure {
+                    Log.e("HomeViewModel", "Failed to load chapter", it)
                     _uiState.value = HomeUiState.Error(it.message ?: "Unknown error")
                 }
         }
     }
 
     private fun updateState() {
-        Log.d("HomeViewModel", "bookName=$currentBookName bookId=$currentBookId chapter=$currentChapterNumber")
+        Log.d("HomeViewModel", "Updating state: bookName=$currentBookName bookId=$currentBookId chapter=$currentChapterNumber verse=$lastReadVerseNumber isNavigatingFromSplash=$isNavigatingFromSplash")
         _uiState.value = HomeUiState.Success(
             bookName = currentBookName,
             chapterNumber = currentChapterNumber,
@@ -166,6 +205,7 @@ class HomeViewModel(
 
     fun navigateNextChapter() {
         stopSpeaking()
+        isNavigatingFromSplash = false
         viewModelScope.launch {
             val currentBook = translationBookRepository.getBookById(currentBookId)
             if (currentBook != null && currentChapterNumber < currentBook.numberOfChapters) {
@@ -187,6 +227,7 @@ class HomeViewModel(
 
     fun navigatePreviousChapter() {
         stopSpeaking()
+        isNavigatingFromSplash = false
         viewModelScope.launch {
             if (currentChapterNumber > 1) {
                 currentChapterNumber--
@@ -205,18 +246,64 @@ class HomeViewModel(
         }
     }
 
-    fun navigateToBook(
-        bookId: String,
-        bookName: String,
-        chapterNumber: Int = 1,
-        verseNumber: Int = 1,
-    ) {
+    // Navigate to a specific book, chapter, and verse from SplashScreen (daily verse click)
+    fun navigateToBook(bookId: String, bookName: String, chapterNumber: Int, verseNumber: Int) {
+        Log.d("HomeViewModel", "Navigating to specific book: $bookName $chapterNumber:$verseNumber")
         stopSpeaking()
-        currentBookId = bookId
-        currentBookName = bookName
-        currentChapterNumber = chapterNumber
-        lastReadVerseNumber = verseNumber
-        loadChapter()
+        viewModelScope.launch {
+            // Set flag to prevent loading last read verse
+            isNavigatingFromSplash = true
+            isInitialLoadCompleted = true
+
+            // Update current state with the new book, chapter, and verse
+            currentBookId = bookId
+            currentBookName = bookName
+            currentChapterNumber = chapterNumber
+            lastReadVerseNumber = verseNumber
+
+            // Load the chapter
+            loadChapter()
+        }
+    }
+
+    // Navigate to last read verse (called when pressing Bible button)
+    fun navigateToLastReadVerse() {
+        Log.d("HomeViewModel", "Navigating to last read verse")
+        stopSpeaking()
+        viewModelScope.launch {
+            // Set flag to indicate we're navigating from splash
+            isNavigatingFromSplash = true
+            isInitialLoadCompleted = true
+
+            // Load the last read verse
+            getLastReadVerse()
+                .onSuccess { verse ->
+                    if (verse != null) {
+                        Log.d("HomeViewModel", "Found last read verse: ${verse.bookName} ${verse.chapterNumber}:${verse.verseNumber}")
+                        currentTranslationId = verse.translationId
+                        currentBookId = verse.bookId
+                        currentBookName = verse.bookName
+                        currentChapterNumber = verse.chapterNumber
+                        lastReadVerseNumber = verse.verseNumber
+                    } else {
+                        Log.d("HomeViewModel", "No last read verse found, using default: Genesis 1:1")
+                        currentBookId = "GEN"
+                        currentBookName = "Génesis"
+                        currentChapterNumber = 1
+                        lastReadVerseNumber = 1
+                    }
+                    loadChapter()
+                }
+                .onFailure { error ->
+                    Log.e("HomeViewModel", "Failed to load last read verse", error)
+                    // Fallback to default
+                    currentBookId = "GEN"
+                    currentBookName = "Génesis"
+                    currentChapterNumber = 1
+                    lastReadVerseNumber = 1
+                    loadChapter()
+                }
+        }
     }
 
     fun onVerseVisible(verseNumber: Int) {

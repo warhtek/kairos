@@ -10,6 +10,7 @@
  */
 package mobi.kairos.android.ui.home
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,7 +32,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
@@ -39,11 +39,6 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.VolumeUp
-import androidx.compose.material.icons.outlined.Book
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.Today
-import androidx.compose.material.icons.outlined.Translate
-import androidx.compose.material.icons.outlined.VolumeUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -98,25 +93,46 @@ fun HomeScreen(
     selectedTranslationId: String? = null,
     onBookSelected: () -> Unit = {},
     onTranslationChanged: () -> Unit = {},
+    onNavigateToSplash: () -> Unit = {},
     viewModel: HomeViewModel = koinViewModel(),
     booksViewModel: BooksViewModel = koinViewModel(),
     translationsViewModel: TranslationsViewModel = koinViewModel(),
     searchViewModel: SearchViewModel = koinViewModel(),
     splashViewModel: SplashViewModel = koinViewModel(),
 ) {
-    if (selectedBookId != null && selectedBookName != null) {
-        viewModel.navigateToBook(
-            selectedBookId,
-            selectedBookName,
-            selectedChapterNumber,
-            selectedVerseNumber,
-        )
-        onBookSelected()
+    Log.d("HomeScreen", "Rendering with params - bookId: $selectedBookId, bookName: $selectedBookName")
+
+    // Track if initial navigation has been handled
+    var initialNavigationHandled by remember { mutableStateOf(false) }
+
+    // Navigate to specific verse when coming from SplashScreen
+    LaunchedEffect(selectedBookId, selectedBookName, selectedChapterNumber, selectedVerseNumber) {
+        if (!initialNavigationHandled) {
+            if (selectedBookId != null && selectedBookName != null) {
+                Log.d("HomeScreen", "Navigating to specific verse: $selectedBookName $selectedChapterNumber:$selectedVerseNumber")
+                viewModel.navigateToBook(
+                    selectedBookId,
+                    selectedBookName,
+                    selectedChapterNumber,
+                    selectedVerseNumber,
+                )
+                onBookSelected()
+            } else {
+                Log.d("HomeScreen", "No specific verse selected, loading default book")
+                // Load default book (Genesis 1)
+                viewModel.navigateToLastReadVerse()
+            }
+            initialNavigationHandled = true
+        }
     }
 
-    if (selectedTranslationId != null) {
-        viewModel.changeTranslation(selectedTranslationId)
-        onTranslationChanged()
+    // Change translation when coming from SplashScreen
+    LaunchedEffect(selectedTranslationId) {
+        if (selectedTranslationId != null) {
+            Log.d("HomeScreen", "Changing translation to: $selectedTranslationId")
+            viewModel.changeTranslation(selectedTranslationId)
+            onTranslationChanged()
+        }
     }
 
     val context = LocalContext.current
@@ -198,7 +214,7 @@ fun HomeScreen(
                     IconButton(onClick = { showSearchSheet = true }) {
                         Icon(
                             imageVector = Icons.Default.Search,
-                            contentDescription = "Buscar",
+                            contentDescription = "Search",
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -206,7 +222,7 @@ fun HomeScreen(
                     IconButton(onClick = { showVoiceSheet = true }) {
                         Icon(
                             imageVector = Icons.Default.VolumeUp,
-                            contentDescription = "Voz",
+                            contentDescription = "Voice",
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -224,7 +240,7 @@ fun HomeScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = "Publicidad",
+                        text = "Advertisement",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -255,7 +271,7 @@ fun HomeScreen(
                         ) {
                             Icon(
                                 imageVector = if (ttsState.isPlaying) Icons.Default.Stop else Icons.Default.PlayArrow,
-                                contentDescription = if (ttsState.isPlaying) "Detener" else "Reproducir",
+                                contentDescription = if (ttsState.isPlaying) "Stop" else "Play",
                                 tint = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.size(24.dp)
                             )
@@ -285,12 +301,12 @@ fun HomeScreen(
                         IconButton(onClick = { showBooksSheet = true }) {
                             Icon(
                                 imageVector = Icons.Default.MenuBook,
-                                contentDescription = "Libros",
+                                contentDescription = "Books",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         Text(
-                            text = "Libros",
+                            text = "Books",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -302,12 +318,12 @@ fun HomeScreen(
                         IconButton(onClick = { showSearchSheet = true }) {
                             Icon(
                                 imageVector = Icons.Default.Search,
-                                contentDescription = "Buscar",
+                                contentDescription = "Search",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         Text(
-                            text = "Buscar",
+                            text = "Search",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -319,12 +335,12 @@ fun HomeScreen(
                         IconButton(onClick = { showDailyVerseSheet = true }) {
                             Icon(
                                 imageVector = Icons.Default.Today,
-                                contentDescription = "Versículo del día",
+                                contentDescription = "Verse of the Day",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         Text(
-                            text = "Hoy",
+                            text = "Today",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -336,12 +352,12 @@ fun HomeScreen(
                         IconButton(onClick = { showTranslationsSheet = true }) {
                             Icon(
                                 imageVector = Icons.Default.Translate,
-                                contentDescription = "Versiones",
+                                contentDescription = "Translations",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         Text(
-                            text = "Versión",
+                            text = "Version",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -353,12 +369,12 @@ fun HomeScreen(
                         IconButton(onClick = { showVoiceSheet = true }) {
                             Icon(
                                 imageVector = Icons.Default.VolumeUp,
-                                contentDescription = "Voz",
+                                contentDescription = "Voice",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         Text(
-                            text = "Voz",
+                            text = "Voice",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -377,7 +393,7 @@ fun HomeScreen(
                     modifier = Modifier.align(Alignment.Center),
                 )
                 is HomeUiState.Empty -> Text(
-                    text = "No hay versículos disponibles",
+                    text = "No verses available",
                     modifier = Modifier.align(Alignment.Center).padding(24.dp),
                 )
                 is HomeUiState.Success -> ChapterContent(
@@ -410,7 +426,7 @@ fun HomeScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    text = "Versículo del día",
+                    text = "Verse of the Day",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                 )
@@ -432,20 +448,16 @@ fun HomeScreen(
                         )
                         Button(
                             onClick = {
-                                viewModel.navigateToBook(
-                                    state.verse.bookId,
-                                    state.verse.bookName,
-                                    state.verse.chapterNumber,
-                                    state.verse.verseNumber,
-                                )
+                                // Navigate back to SplashScreen
+                                onNavigateToSplash()
                                 showDailyVerseSheet = false
                             },
                             modifier = Modifier.fillMaxWidth(),
                         ) {
-                            Text("Ir al versículo")
+                            Text("View Verse of the Day")
                         }
                     }
-                    else -> Text("No disponible")
+                    else -> Text("Not available")
                 }
             }
         }
@@ -467,16 +479,16 @@ fun HomeScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     TextButton(onClick = { showBooksSheet = false }) {
-                        Text("Cancelar")
+                        Text("Cancel")
                     }
                     Text(
-                        text = "Libros",
+                        text = "Books",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                     )
                     // Sort toggle
                     TextButton(onClick = { sortAlphabetically = !sortAlphabetically }) {
-                        Text(if (sortAlphabetically) "Tradicional" else "Alfabético")
+                        Text(if (sortAlphabetically) "Traditional" else "Alphabetical")
                     }
                 }
                 HorizontalDivider()
@@ -580,10 +592,10 @@ fun HomeScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     TextButton(onClick = { showTranslationsSheet = false }) {
-                        Text("Cancelar")
+                        Text("Cancel")
                     }
                     Text(
-                        text = "Mis versiones",
+                        text = "My Versions",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                     )
@@ -664,12 +676,12 @@ fun HomeScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Text(
-                    text = "Buscar versículo",
+                    text = "Search Verse",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = "Ejemplo: Génesis 3:3",
+                    text = "Example: Genesis 3:3",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -677,7 +689,7 @@ fun HomeScreen(
                     value = searchQuery,
                     onValueChange = { searchViewModel.onQueryChanged(it) },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Ej: Génesis 3:3") },
+                    placeholder = { Text("Ex: Genesis 3:3") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(
@@ -696,14 +708,14 @@ fun HomeScreen(
                     },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("Buscar")
+                    Text("Search")
                 }
                 when (val state = searchUiState) {
                     is mobi.kairos.android.ui.search.SearchUiState.Loading ->
                         CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
                     is mobi.kairos.android.ui.search.SearchUiState.NotFound ->
                         Text(
-                            text = "No se encontró el versículo",
+                            text = "Verse not found",
                             color = MaterialTheme.colorScheme.error,
                         )
                     is mobi.kairos.android.ui.search.SearchUiState.Success -> {
@@ -728,7 +740,7 @@ fun HomeScreen(
                                 },
                                 modifier = Modifier.fillMaxWidth(),
                             ) {
-                                Text("Ir al versículo")
+                                Text("Go to Verse")
                             }
                         }
                     }
@@ -749,7 +761,7 @@ fun HomeScreen(
                 modifier = Modifier.padding(bottom = 32.dp),
             ) {
                 Text(
-                    text = "Seleccionar voz",
+                    text = "Select Voice",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(16.dp),
@@ -757,7 +769,7 @@ fun HomeScreen(
                 HorizontalDivider()
                 if (ttsState.availableVoices.isEmpty()) {
                     Text(
-                        text = "No hay voces disponibles",
+                        text = "No voices available",
                         modifier = Modifier.padding(16.dp),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -804,7 +816,7 @@ fun HomeScreen(
                     },
                 ) {
                     Text(
-                        text = "+ Instalar más voces",
+                        text = "+ Install more voices",
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(16.dp),
                     )
