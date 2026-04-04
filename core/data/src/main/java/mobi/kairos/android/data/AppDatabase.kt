@@ -36,7 +36,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun readingProgressDao(): ReadingProgressDao
 }
 
-internal fun databaseBuilder(context: Context, dbName: String, notifier: RoomReadyNotifier): AppDatabase {
+internal fun databaseBuilder(context: Context, dbName: String, notifier: RoomNotifier): AppDatabase {
     return Room.databaseBuilder(
         context = context,
         klass = AppDatabase::class.java,

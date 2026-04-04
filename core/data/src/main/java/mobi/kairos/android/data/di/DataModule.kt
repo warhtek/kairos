@@ -1,81 +1,51 @@
-/*
- * © 2026 MOBIWARE. All rights reserved.
- *
- * This software and its source code are the exclusive property of MOBIWARE.
- * Any unauthorized use, reproduction, distribution, modification, or disclosure
- * of this software, whether in whole or in part, is strictly prohibited.
- *
- * Violations may result in severe civil and criminal penalties under applicable
- * copyright, intellectual property, and trade secret laws.
- */
 package mobi.kairos.android.data.di
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import org.koin.android.ext.koin.androidContext
-import org.koin.core.qualifier.named
 import org.koin.dsl.module
-import mobi.kairos.android.data.AppDatabase
-import mobi.kairos.android.data.RoomReadyNotifier
-import mobi.kairos.android.data.dao.DatabaseInfoDao
-import mobi.kairos.android.data.dao.TranslationBookDao
-import mobi.kairos.android.data.dao.TranslationDao
-import mobi.kairos.android.data.parser.TranslationBookJsonParserImpl
-import mobi.kairos.android.data.parser.TranslationJsonParserImpl
-import mobi.kairos.android.data.repository.DatabaseRepositoryImpl
-import mobi.kairos.android.data.repository.TranslationBookRepositoryImpl
-import mobi.kairos.android.data.repository.TranslationRepositoryImpl
-import mobi.kairos.android.data.resource.AndroidAssetResource
-import mobi.kairos.android.data.resource.TranslationBooksAssetImpl
-import mobi.kairos.android.data.resource.TranslationsAssetImpl
-import mobi.kairos.android.parser.TranslationBookJsonParser
-import mobi.kairos.android.parser.TranslationJsonParser
 import mobi.kairos.android.repository.DatabaseRepository
-import mobi.kairos.android.repository.TranslationBookRepository
 import mobi.kairos.android.repository.TranslationRepository
-import mobi.kairos.android.resource.AssetResource
-import mobi.kairos.android.resource.TranslationBooksAsset
-import mobi.kairos.android.resource.TranslationsAsset
-import mobi.kairos.android.data.dao.ChapterDao
-import mobi.kairos.android.data.dao.ReadingProgressDao
-import mobi.kairos.android.data.repository.ChapterRepositoryImpl
-import mobi.kairos.android.data.repository.ReadingProgressRepositoryImpl
+import mobi.kairos.android.repository.TranslationBookRepository
 import mobi.kairos.android.repository.ChapterRepository
 import mobi.kairos.android.repository.ReadingProgressRepository
-import mobi.kairos.android.data.parser.CompleteTranslationJsonParserImpl
+import mobi.kairos.android.data.repository.DatabaseRepositoryImpl
+import mobi.kairos.android.data.repository.TranslationRepositoryImpl
+import mobi.kairos.android.data.repository.TranslationBookRepositoryImpl
+import mobi.kairos.android.data.repository.ChapterRepositoryImpl
+import mobi.kairos.android.data.repository.ReadingProgressRepositoryImpl
+import mobi.kairos.android.data.resource.AndroidAssetResource
+import mobi.kairos.android.data.resource.TranslationsAssetImpl
+import mobi.kairos.android.data.resource.TranslationBooksAssetImpl
 import mobi.kairos.android.data.resource.CompleteTranslationAssetImpl
-import mobi.kairos.android.parser.CompleteTranslationJsonParser
+import mobi.kairos.android.resource.AssetResource
+import mobi.kairos.android.resource.TranslationsAsset
+import mobi.kairos.android.resource.TranslationBooksAsset
 import mobi.kairos.android.resource.CompleteTranslationAsset
-import mobi.kairos.android.usecase.ImportChaptersUseCase
-import mobi.kairos.android.data.repository.BibleApiRepositoryImpl
-import mobi.kairos.android.repository.BibleApiRepository
+import mobi.kairos.android.data.AppDatabase
+import mobi.kairos.android.data.databaseBuilder
+import mobi.kairos.android.data.RoomNotifier
 
+val dataModule = module {
+    // Database
+    single { RoomNotifier() }
+    single<AppDatabase> { databaseBuilder(androidContext(), "kairos.db", get()) }
+    single { get<AppDatabase>().databaseInfoDao() }
+    single { get<AppDatabase>().translationDao() }
+    single { get<AppDatabase>().translationBookDao() }
+    single { get<AppDatabase>().chapterDao() }
+    single { get<AppDatabase>().readingProgressDao() }
 
-val dataModule =
-    module {
-        single(named("availableTranslations")) { "spa_bes" }
-        single<CoroutineScope>(named("ioScope")) { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
-        single<RoomReadyNotifier> { RoomReadyNotifier(get(named("ioScope"))) }
-        single<DatabaseRepository> { DatabaseRepositoryImpl(get()) }
-        single<TranslationRepository> { TranslationRepositoryImpl(get()) }
-        single<DatabaseInfoDao> { get<AppDatabase>().databaseInfoDao() }
-        single<TranslationDao> { get<AppDatabase>().translationDao() }
-        single<TranslationBookDao> { get<AppDatabase>().translationBookDao() }
-        single<AssetResource> { AndroidAssetResource(androidContext()) }
-        single<TranslationsAsset> { TranslationsAssetImpl(get()) }
-        single<TranslationBooksAsset> { TranslationBooksAssetImpl(get()) }
-        single<TranslationJsonParser> { TranslationJsonParserImpl() }
-        single<TranslationBookJsonParser> { TranslationBookJsonParserImpl() }
-        //single<TranslationRepository> { TranslationRepositoryImpl(get()) }
-        single<TranslationBookRepository> { TranslationBookRepositoryImpl(get()) }
-        single<ChapterDao> { get<AppDatabase>().chapterDao() }
-        single<ReadingProgressDao> { get<AppDatabase>().readingProgressDao() }
-        single<ChapterRepository> { ChapterRepositoryImpl(get()) }
-        single<ReadingProgressRepository> { ReadingProgressRepositoryImpl(get()) }
-        single<CompleteTranslationAsset> { CompleteTranslationAssetImpl(get()) }
-        single<CompleteTranslationJsonParser> { CompleteTranslationJsonParserImpl() }
-        factory<ImportChaptersUseCase> { ImportChaptersUseCase(get(), get(), get()) }
-        single<BibleApiRepository> { BibleApiRepositoryImpl() }
-        includes(roomModule)
-    }
+    // Asset Resource
+    single<AssetResource> { AndroidAssetResource(androidContext()) }
+
+    // Assets
+    single<TranslationsAsset> { TranslationsAssetImpl(get()) }
+    single<TranslationBooksAsset> { TranslationBooksAssetImpl(get()) }
+    single<CompleteTranslationAsset> { CompleteTranslationAssetImpl(get()) }
+
+    // Repositorios
+    single<DatabaseRepository> { DatabaseRepositoryImpl(get()) }
+    single<TranslationRepository> { TranslationRepositoryImpl(get()) }
+    single<TranslationBookRepository> { TranslationBookRepositoryImpl(get()) }
+    single<ChapterRepository> { ChapterRepositoryImpl(get()) }
+    single<ReadingProgressRepository> { ReadingProgressRepositoryImpl(get()) }
+}

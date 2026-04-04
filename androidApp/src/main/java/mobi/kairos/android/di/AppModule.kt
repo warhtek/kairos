@@ -13,16 +13,9 @@ package mobi.kairos.android.di
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import mobi.kairos.android.data.di.dataModule
-import mobi.kairos.android.ui.books.booksModule
-import mobi.kairos.android.ui.home.homeModule
-import mobi.kairos.android.ui.search.searchModule
-import mobi.kairos.android.ui.splash.splashModule
-import mobi.kairos.android.ui.translations.translationsModule
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 val appModule = module {
     single<CoroutineScope>(named("appScope")) { CoroutineScope(SupervisorJob() + Dispatchers.Main) }
-    includes(domainModule, dataModule, homeModule, booksModule, translationsModule, searchModule, splashModule)
 }

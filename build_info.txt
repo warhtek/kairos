@@ -1,0 +1,146 @@
+Initialized native services in: /home/walter/.gradle/native
+Initialized jansi services in: /home/walter/.gradle/native
+The client will now receive all logging from the daemon (pid: 5577). The daemon log file: /home/walter/.gradle/daemon/9.1.0/daemon-5577.out.log
+Starting 7th build in daemon [uptime: 14 mins 26.863 secs, performance: 99%, GC rate: 0.00/s, heap usage: 0% of 4 GiB, non-heap usage: 12% of 1 GiB]
+Using 2 worker leases.
+Now considering [/home/walter/AndroidStudioProjects/kairos] as hierarchies to watch
+Watching the file system is configured to be enabled if available
+File system watching is active
+Starting Build
+Resolved plugin [id: 'org.gradle.toolchains.foojay-resolver-convention', version: '1.0.0']
+Settings evaluated using settings file '/home/walter/AndroidStudioProjects/kairos/settings.gradle.kts'.
+Projects loaded. Root project using build file '/home/walter/AndroidStudioProjects/kairos/build.gradle.kts'.
+Included projects: [root project 'kairos', project ':androidApp', project ':core', project ':ui', project ':core:assets', project ':core:data', project ':core:domain', project ':ui:books', project ':ui:common', project ':ui:home', project ':ui:search', project ':ui:splash', project ':ui:translations']
+
+> Configure project :
+Evaluating root project 'kairos' using build file '/home/walter/AndroidStudioProjects/kairos/build.gradle.kts'.
+Resolved plugin [id: 'com.android.application', version: '9.0.1', apply: false]
+Resolved plugin [id: 'com.android.library', version: '9.0.1', apply: false]
+Resolved plugin [id: 'com.google.devtools.ksp', version: '2.3.4', apply: false]
+Resolved plugin [id: 'org.jetbrains.kotlin.plugin.compose', version: '2.3.10', apply: false]
+Resolved plugin [id: 'com.diffplug.spotless', version: '8.3.0', apply: false]
+
+> Configure project :androidApp
+Evaluating project ':androidApp' using build file '/home/walter/AndroidStudioProjects/kairos/androidApp/build.gradle.kts'.
+Resolved plugin [id: 'com.android.application', version: '9.0.1']
+Resolved plugin [id: 'org.jetbrains.kotlin.plugin.compose', version: '2.3.10']
+Resolved plugin [id: 'com.google.devtools.ksp', version: '2.3.4']
+Resolved plugin [id: 'org.jetbrains.kotlin.plugin.serialization', version: '2.3.10']
+Resolved plugin [id: 'org.jetbrains.kotlinx.kover', version: '0.9.7']
+Build baee5e97-e6eb-41fd-b7ab-06a4d70bb4b2 is started
+Using default execution profile
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+
+> Configure project :core
+Evaluating project ':core' using build file '/home/walter/AndroidStudioProjects/kairos/core/build.gradle'.
+
+> Configure project :ui
+Evaluating project ':ui' using build file '/home/walter/AndroidStudioProjects/kairos/ui/build.gradle'.
+
+> Configure project :core:assets
+Evaluating project ':core:assets' using build file '/home/walter/AndroidStudioProjects/kairos/core/assets/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library', version: '9.0.1']
+Using default execution profile
+
+> Configure project :core:data
+Evaluating project ':core:data' using build file '/home/walter/AndroidStudioProjects/kairos/core/data/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library', version: '9.0.1']
+Resolved plugin [id: 'com.google.devtools.ksp', version: '2.3.4']
+Resolved plugin [id: 'org.jetbrains.kotlinx.kover', version: '0.9.7']
+Resolved plugin [id: 'org.jetbrains.kotlin.plugin.serialization', version: '2.3.10']
+Using default execution profile
+
+> Configure project :core:domain
+Evaluating project ':core:domain' using build file '/home/walter/AndroidStudioProjects/kairos/core/domain/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library', version: '9.0.1']
+Using default execution profile
+
+> Configure project :ui:books
+Evaluating project ':ui:books' using build file '/home/walter/AndroidStudioProjects/kairos/ui/books/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library', version: '9.0.1']
+Resolved plugin [id: 'org.jetbrains.kotlin.plugin.compose', version: '2.3.10']
+Resolved plugin [id: 'org.jetbrains.kotlinx.kover', version: '0.9.7']
+Using default execution profile
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+
+> Configure project :ui:common
+Evaluating project ':ui:common' using build file '/home/walter/AndroidStudioProjects/kairos/ui/common/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library', version: '9.0.1']
+Resolved plugin [id: 'org.jetbrains.kotlin.plugin.compose', version: '2.3.10']
+Resolved plugin [id: 'com.google.devtools.ksp', version: '2.3.4']
+Resolved plugin [id: 'org.jetbrains.kotlinx.kover', version: '0.9.7']
+Using default execution profile
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+
+> Configure project :ui:home
+Evaluating project ':ui:home' using build file '/home/walter/AndroidStudioProjects/kairos/ui/home/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library', version: '9.0.1']
+Resolved plugin [id: 'org.jetbrains.kotlin.plugin.compose', version: '2.3.10']
+Resolved plugin [id: 'com.google.devtools.ksp', version: '2.3.4']
+Resolved plugin [id: 'org.jetbrains.kotlinx.kover', version: '0.9.7']
+Using default execution profile
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+
+> Configure project :ui:search
+Evaluating project ':ui:search' using build file '/home/walter/AndroidStudioProjects/kairos/ui/search/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library', version: '9.0.1']
+Resolved plugin [id: 'org.jetbrains.kotlin.plugin.compose', version: '2.3.10']
+Resolved plugin [id: 'org.jetbrains.kotlinx.kover', version: '0.9.7']
+Using default execution profile
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+
+> Configure project :ui:splash
+Evaluating project ':ui:splash' using build file '/home/walter/AndroidStudioProjects/kairos/ui/splash/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library', version: '9.0.1']
+Resolved plugin [id: 'org.jetbrains.kotlin.plugin.compose', version: '2.3.10']
+Resolved plugin [id: 'org.jetbrains.kotlinx.kover', version: '0.9.7']
+Using default execution profile
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+
+> Configure project :ui:translations
+Evaluating project ':ui:translations' using build file '/home/walter/AndroidStudioProjects/kairos/ui/translations/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library', version: '9.0.1']
+Resolved plugin [id: 'org.jetbrains.kotlin.plugin.compose', version: '2.3.10']
+Resolved plugin [id: 'org.jetbrains.kotlinx.kover', version: '0.9.7']
+Using default execution profile
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+All projects evaluated.
+Task name matched 'build'
+Selected primary task 'build' from project :
+Build baee5e97-e6eb-41fd-b7ab-06a4d70bb4b2 is closed
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Could not determine the dependencies of task ':androidApp:packageDebug'.
+> Could not create task ':androidApp:compileDebugJavaWithJavac'.
+   > com/android/sdklib/AndroidTargetHash
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --debug option to get more log output.
+> Run with --scan to generate a Build Scan (Powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 3s

@@ -15,6 +15,13 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
 import mobi.kairos.android.di.appModule
+import mobi.kairos.android.data.di.dataModule
+import mobi.kairos.android.di.domainModule
+import mobi.kairos.android.ui.books.booksModule
+import mobi.kairos.android.ui.home.homeModule
+import mobi.kairos.android.ui.search.searchModule
+import mobi.kairos.android.ui.splash.splashModule
+import mobi.kairos.android.ui.translations.translationsModule
 
 class MainApplication : Application() {
     override fun onCreate() {
@@ -22,7 +29,7 @@ class MainApplication : Application() {
         startKoin {
             androidLogger()
             androidContext(this@MainApplication)
-            modules(appModule)
+            modules(appModule,dataModule,domainModule, homeModule,booksModule,splashModule, searchModule,translationsModule)
         }
     }
 }

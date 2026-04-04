@@ -4,9 +4,13 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
-}
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+    
+    // Forzar la versión 9.0.1 del plugin de Android
+    plugins {
+        id("com.android.application") version "9.0.1"
+        id("com.android.library") version "9.0.1"
+        id("org.jetbrains.kotlin.android") version "2.3.10"
+    }
 }
 
 dependencyResolutionManagement {

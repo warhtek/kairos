@@ -1,0 +1,1 @@
+Error: Unable to access jarfile /home/walter/AndroidStudioProjects/kairos/gradle/wrapper/gradle-wrapper.jar

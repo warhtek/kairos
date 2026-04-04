@@ -1,31 +1,22 @@
 package mobi.kairos.android.di
 
 import org.koin.dsl.module
-import mobi.kairos.android.usecase.GetBooksUseCase
-import mobi.kairos.android.usecase.GetDatabaseVersionUseCase
-import mobi.kairos.android.usecase.GetChapterUseCase
-import mobi.kairos.android.usecase.GetLastReadVerseUseCase
-import mobi.kairos.android.usecase.GetOrDownloadChapterUseCase
-import mobi.kairos.android.usecase.GetTranslationsUseCase
-import mobi.kairos.android.usecase.ImportTranslationBooksUseCase
-import mobi.kairos.android.usecase.ImportTranslationsUseCase
-import mobi.kairos.android.usecase.GetVersesUseCase
-import mobi.kairos.android.usecase.SaveLastReadVerseUseCase
-import mobi.kairos.android.usecase.SearchVerseUseCase
-import mobi.kairos.android.usecase.GetDailyVerseUseCase
+import mobi.kairos.android.usecase.*
 
-val domainModule =
-    module {
-        factory<GetDatabaseVersionUseCase> { GetDatabaseVersionUseCase(get()) }
-        factory<ImportTranslationsUseCase> { ImportTranslationsUseCase(get(), get(), get()) }
-        factory<ImportTranslationBooksUseCase> { ImportTranslationBooksUseCase(get(), get(), get()) }
-        factory<GetChapterUseCase> { GetChapterUseCase(get()) }
-        factory<GetLastReadVerseUseCase> { GetLastReadVerseUseCase(get()) }
-        factory<GetBooksUseCase> { GetBooksUseCase(get()) }
-        factory<GetVersesUseCase> { GetVersesUseCase(get()) }
-        factory<SaveLastReadVerseUseCase> { SaveLastReadVerseUseCase(get()) }
-        factory<GetTranslationsUseCase> { GetTranslationsUseCase(get()) }
-        factory<SearchVerseUseCase> { SearchVerseUseCase(get(), get()) }
-        factory<GetOrDownloadChapterUseCase> { GetOrDownloadChapterUseCase(get(), get(), get()) }
-        factory<GetDailyVerseUseCase> { GetDailyVerseUseCase(get(), get()) }
-    }
+val domainModule = module {
+    // UseCases con parámetros
+    single { GetDatabaseVersionUseCase(get()) }
+    single { ImportTranslationsUseCase(get(), get(), get()) }
+    single { ImportTranslationBooksUseCase(get(), get(), get()) }
+    single { GetChapterUseCase(get()) }
+    single { GetLastReadVerseUseCase(get()) }
+    single { GetBooksUseCase(get()) }
+    single { GetVersesUseCase(get()) }
+    single { SaveLastReadVerseUseCase(get()) }
+    single { GetOrDownloadChapterUseCase(get()) }  // ← Pasa el ChapterRepository
+
+    // UseCases sin parámetros
+    single { GetTranslationsUseCase() }
+    single { SearchVerseUseCase() }
+    single { GetDailyVerseUseCase() }
+}

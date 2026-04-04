@@ -26,7 +26,7 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import mobi.kairos.android.data.RoomReadyNotifier
+import mobi.kairos.android.data.RoomNotifier
 import mobi.kairos.android.usecase.GetDatabaseVersionUseCase
 import mobi.kairos.android.usecase.ImportChaptersUseCase
 import mobi.kairos.android.usecase.ImportTranslationBooksUseCase
@@ -36,7 +36,7 @@ import org.koin.core.qualifier.named
 import mobi.kairos.android.repository.ChapterRepository
 
 class MainActivity : ComponentActivity() {
-    private val roomReadyNotifier: RoomReadyNotifier by inject()
+    private val roomReadyNotifier: RoomNotifier by inject()
     private val getDatabaseVersion: GetDatabaseVersionUseCase by inject()
     private val importTranslations: ImportTranslationsUseCase by inject()
     private val importTranslationBooks: ImportTranslationBooksUseCase by inject()
