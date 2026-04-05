@@ -31,6 +31,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.material3)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.compose.ui.test)
     debugImplementation(libs.androidx.compose.ui.test.manifest)

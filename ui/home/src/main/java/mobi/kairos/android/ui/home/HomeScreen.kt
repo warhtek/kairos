@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -32,6 +33,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowCircleDown
+import androidx.compose.material.icons.filled.ArrowCircleUp
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.MenuBook
@@ -88,6 +92,13 @@ import mobi.kairos.android.ui.search.SearchViewModel
 import mobi.kairos.android.ui.splash.SplashViewModel
 import mobi.kairos.android.ui.translations.TranslationsViewModel
 import org.koin.androidx.compose.koinViewModel
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
+import mobi.kairos.android.ui.translations.TranslationsUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -140,6 +151,10 @@ fun HomeScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
+    LaunchedEffect(Unit) {
+        translationsViewModel.setContext(context)
+    }
+
     DisposableEffect(Unit) {
         viewModel.initTts(context)
         onDispose { }
@@ -165,70 +180,60 @@ fun HomeScreen(
     var sortAlphabetically by remember { mutableStateOf(false) }
     var showDailyVerseSheet by remember { mutableStateOf(false) }
 
+    fun getTranslationSize(translationId: String?): String {
+        return when (translationId) {
+            "spa_bes" -> "5.2"
+            "BSB" -> "6.8"
+            "AAB" -> "4.5"
+            "ARBNAV" -> "8.2"
+            "HINIRV" -> "7.1"
+            else -> "3.0"
+        }
+    }
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    when (val state = uiState) {
-                        is HomeUiState.Success -> {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                // Botón anterior con icono y número
-                                TextButton(
-                                    onClick = { viewModel.navigatePreviousChapter() },
-                                    enabled = state.hasPrevious,
-                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.SkipPrevious,
-                                            contentDescription = "Previous Chapter",
-                                            modifier = Modifier.size(36.dp),
-                                            tint = if (state.hasPrevious) MaterialTheme.colorScheme.onSurface
-                                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                                        )
-                                        Text(
-                                            text = "${state.chapterNumber - 1}".takeIf { state.hasPrevious } ?: "",
-                                            fontSize = 14.sp,
-                                        )
-                                    }
-                                }
-
-                                // Contenedor flexible para alinear verticalmente con bottomBar
+            Column {
+                // Primera fila de la TopBar (Navegación y acciones)
+                TopAppBar(
+                    title = {
+                        when (val state = uiState) {
+                            is HomeUiState.Success -> {
                                 Row(
-                                    modifier = Modifier.weight(1f),
-                                    horizontalArrangement = Arrangement.SpaceEvenly,
-                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.Top,
                                 ) {
-                                    // Columna 1: Libro (alineado con Search)
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        modifier = Modifier.weight(1f)
+                                    // Grupo izquierdo: Anterior, Play, Siguiente
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
                                     ) {
+                                        // Botón anterior
                                         TextButton(
-                                            onClick = { showBooksSheet = true },
-                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                                            onClick = { viewModel.navigatePreviousChapter() },
+                                            enabled = state.hasPrevious,
+                                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
                                         ) {
-                                            Text(
-                                                text = "${state.bookName} ${state.chapterNumber}",
-                                                style = MaterialTheme.typography.headlineSmall,
-                                                fontWeight = FontWeight.ExtraBold,
-                                                color = MaterialTheme.colorScheme.onSurface,
-                                            )
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.SkipPrevious,
+                                                    contentDescription = "Previous Chapter",
+                                                    modifier = Modifier.size(24.dp),
+                                                    tint = if (state.hasPrevious) MaterialTheme.colorScheme.onSurface
+                                                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                                )
+                                                Text(
+                                                    text = "${state.chapterNumber - 1}".takeIf { state.hasPrevious } ?: "",
+                                                    fontSize = 14.sp,
+                                                )
+                                            }
                                         }
-                                    }
 
-                                    // Columna 2: Play (alineado con Today)
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        modifier = Modifier.weight(1f)
-                                    ) {
+                                        // Botón Play
                                         FilledTonalIconButton(
                                             onClick = {
                                                 if (ttsState.isPlaying) viewModel.stopSpeaking()
@@ -243,59 +248,115 @@ fun HomeScreen(
                                                 modifier = Modifier.size(20.dp)
                                             )
                                         }
-                                    }
 
-                                    // Columna 3: Versión (alineado con Version)
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Clickable(onClick = { showTranslationsSheet = true }) {
-                                            Text(
-                                                text = state.translationId.uppercase(),
-                                                style = MaterialTheme.typography.titleMedium,
-                                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                                fontWeight = FontWeight.Bold,
-                                                modifier = Modifier
-                                                    .background(
-                                                        color = MaterialTheme.colorScheme.secondaryContainer,
-                                                        shape = RoundedCornerShape(4.dp),
-                                                    )
-                                                    .padding(horizontal = 6.dp, vertical = 2.dp),
-                                            )
+                                        // Botón siguiente
+                                        TextButton(
+                                            onClick = { viewModel.navigateNextChapter() },
+                                            enabled = state.hasNext,
+                                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                            ) {
+                                                Text(
+                                                    text = "${state.chapterNumber + 1}",
+                                                    fontSize = 14.sp,
+                                                )
+                                                Icon(
+                                                    imageVector = Icons.Default.SkipNext,
+                                                    contentDescription = "Next Chapter",
+                                                    modifier = Modifier.size(24.dp),
+                                                    tint = if (state.hasNext) MaterialTheme.colorScheme.onSurface
+                                                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                                )
+                                            }
                                         }
                                     }
-                                }
 
-                                // Botón siguiente con icono y número
-                                TextButton(
-                                    onClick = { viewModel.navigateNextChapter() },
-                                    enabled = state.hasNext,
-                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        Text(
-                                            text = "${state.chapterNumber + 1}",
-                                            fontSize = 14.sp,
-                                        )
-                                        Icon(
-                                            imageVector = Icons.Default.SkipNext,
-                                            contentDescription = "Next Chapter",
-                                            modifier = Modifier.size(36.dp),
-                                            tint = if (state.hasNext) MaterialTheme.colorScheme.onSurface
-                                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                                        )
-                                    }
+                                    // Grupo derecho: Acciones (se manejan en actions)
+                                    // Este espacio está vacío porque las acciones van en actions
+                                    Spacer(modifier = Modifier.width(0.dp))
                                 }
                             }
+                            else -> Text("KAIROS")
                         }
-                        else -> Text("KAIROS")
+                    },
+                    actions = {
+                        val currentState = uiState
+                        if (currentState is HomeUiState.Success) {
+                            // Voice
+                            IconButton(onClick = { showVoiceSheet = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.VolumeUp,
+                                    contentDescription = "Voice",
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            // Versión (badge)
+                            Clickable(onClick = { showTranslationsSheet = true }) {
+                                Text(
+                                    text = currentState.translationId.uppercase(),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier
+                                        .background(
+                                            color = MaterialTheme.colorScheme.secondaryContainer,
+                                            shape = RoundedCornerShape(4.dp),
+                                        )
+                                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                                )
+                            }
+                            // Search
+                            IconButton(onClick = { showSearchSheet = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = "Search",
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            /*// Today
+                            IconButton(onClick = { showDailyVerseSheet = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.Today,
+                                    contentDescription = "Verse of the Day",
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }*/
+                        }
+                    },
+                )
+                // Segunda fila: Botones de Libros y Versiones
+                when (val state = uiState) {
+                    is HomeUiState.Success -> {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment = Alignment.Top,
+                        ) {
+                            // Botón de Libros
+                            TextButton(
+                                onClick = { showBooksSheet = true },
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "${state.bookName} ${state.chapterNumber}",
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
+
+
+                        }
                     }
-                },
-            )
+                    else -> {}
+                }
+            }
         },
         bottomBar = {
             Column {
@@ -320,7 +381,7 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // 1. Search (alineado con Libro arriba)
+                    // 1. Search
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.weight(1f)
@@ -350,7 +411,7 @@ fun HomeScreen(
                         Text(text = "Books", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
 
-                    // 3. Today (alineado con Play arriba)
+                    // 3. Today
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.weight(1f)
@@ -365,7 +426,7 @@ fun HomeScreen(
                         Text(text = "Today", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
 
-                    // 4. Version (alineado con Versión arriba)
+                    // 4. Version
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.weight(1f)
@@ -507,8 +568,24 @@ fun HomeScreen(
                                             fontWeight = if (expandedBookId == book.id) FontWeight.Bold else FontWeight.Normal,
                                             modifier = Modifier.weight(1f),
                                         )
-                                        Clickable(onClick = { expandedBookId = if (expandedBookId == book.id) null else book.id }) {
-                                            Text(text = if (expandedBookId == book.id) "∧" else "∨", fontSize = 18.sp, modifier = Modifier.padding(8.dp))
+                                        IconButton(
+                                            onClick = {
+                                                expandedBookId = if (expandedBookId == book.id) null else book.id
+                                            },
+                                            modifier = Modifier.size(48.dp),
+                                            colors = IconButtonDefaults.iconButtonColors(
+                                                containerColor = Color.Transparent,
+                                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        ) {
+                                            Icon(
+                                                imageVector = if (expandedBookId == book.id)
+                                                    Icons.Default.ArrowCircleUp
+                                                else
+                                                    Icons.Default.ArrowCircleDown,
+                                                contentDescription = if (expandedBookId == book.id) "Collapse" else "Expand",
+                                                modifier = Modifier.size(32.dp),
+                                            )
                                         }
                                     }
                                     if (expandedBookId == book.id) {
@@ -554,6 +631,10 @@ fun HomeScreen(
 
     // Translations bottom sheet
     if (showTranslationsSheet) {
+        val downloadingId by translationsViewModel.downloadingTranslation.collectAsStateWithLifecycle()
+        val showDialog by translationsViewModel.showDownloadDialog.collectAsStateWithLifecycle()
+        val selectedId by translationsViewModel.selectedTranslationId.collectAsStateWithLifecycle()
+
         ModalBottomSheet(
             onDismissRequest = { showTranslationsSheet = false },
             sheetState = translationsSheetState,
@@ -575,46 +656,101 @@ fun HomeScreen(
                     is mobi.kairos.android.ui.translations.TranslationsUiState.Success -> {
                         LazyColumn(modifier = Modifier.fillMaxWidth()) {
                             items(state.translations) { translation ->
+                                val isSelected = selectedId == translation.id
                                 Clickable(
                                     modifier = Modifier.fillMaxWidth(),
                                     onClick = {
-                                        viewModel.changeTranslation(translation.id)
-                                        scope.launch { translationsSheetState.hide() }
-                                        showTranslationsSheet = false
-                                    },
+                                        if (translation.isDownloaded) {
+                                            translationsViewModel.selectTranslation(translation.id)
+                                            viewModel.changeTranslation(translation.id)
+                                            onTranslationChanged()
+                                            scope.launch { translationsSheetState.hide() }
+                                            showTranslationsSheet = false
+                                        }
+                                    }
                                 ) {
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(vertical = 12.dp, horizontal = 16.dp),
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
                                     ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(64.dp)
-                                                .clip(RoundedCornerShape(12.dp))
-                                                .background(MaterialTheme.colorScheme.secondaryContainer),
-                                            contentAlignment = Alignment.Center,
+                                        // Información de la traducción
+                                        Row(
+                                            modifier = Modifier.weight(1f),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(16.dp),
                                         ) {
-                                            Text(
-                                                text = translation.shortName.take(4),
-                                                style = MaterialTheme.typography.labelLarge,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(64.dp)
+                                                    .clip(RoundedCornerShape(12.dp))
+                                                    .background(
+                                                        if (isSelected)
+                                                            MaterialTheme.colorScheme.primaryContainer
+                                                        else
+                                                            MaterialTheme.colorScheme.secondaryContainer
+                                                    ),
+                                                contentAlignment = Alignment.Center,
+                                            ) {
+                                                Text(
+                                                    text = translation.shortName.take(4),
+                                                    style = MaterialTheme.typography.labelLarge,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = if (isSelected)
+                                                        MaterialTheme.colorScheme.primary
+                                                    else
+                                                        MaterialTheme.colorScheme.onSecondaryContainer,
+                                                )
+                                            }
+                                            Column {
+                                                Text(
+                                                    text = translation.languageName ?: translation.language,
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                )
+                                                Text(
+                                                    text = translation.name,
+                                                    style = MaterialTheme.typography.bodyLarge,
+                                                    fontWeight = FontWeight.Medium,
+                                                )
+                                            }
                                         }
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                text = translation.languageName ?: translation.language,
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            )
-                                            Text(
-                                                text = translation.name,
-                                                style = MaterialTheme.typography.bodyLarge,
-                                                fontWeight = FontWeight.Medium,
-                                            )
+
+                                        // Indicador de selección o botón de descarga
+                                        if (translation.isDownloaded) {
+                                            if (isSelected) {
+                                                Icon(
+                                                    imageVector = Icons.Default.CheckCircle,
+                                                    contentDescription = "Selected",
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(24.dp)
+                                                )
+                                            } else {
+                                                Text(
+                                                    text = "✓",
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 18.sp
+                                                )
+                                            }
+                                        } else {
+                                            val isDownloading = downloadingId == translation.id
+                                            Button(
+                                                onClick = { translationsViewModel.showDownloadDialog(translation) },
+                                                enabled = !isDownloading,
+                                                modifier = Modifier.size(width = 100.dp, height = 36.dp),
+                                            ) {
+                                                if (isDownloading) {
+                                                    CircularProgressIndicator(
+                                                        modifier = Modifier.size(20.dp),
+                                                        strokeWidth = 2.dp
+                                                    )
+                                                } else {
+                                                    Text("Descargar", fontSize = 12.sp)
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -625,6 +761,33 @@ fun HomeScreen(
                     else -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally).padding(32.dp))
                 }
             }
+        }
+
+        // Diálogo de confirmación de descarga
+        if (showDialog != null) {
+            AlertDialog(
+                onDismissRequest = { translationsViewModel.dismissDownloadDialog() },
+                title = { Text("Descargar versión") },
+                text = {
+                    Text("¿Deseas descargar \"${showDialog?.name}\"?\n\nEsta acción descargará aproximadamente ${getTranslationSize(showDialog?.id)} MB de datos.")
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showDialog?.let { translationsViewModel.downloadTranslation(it) }
+                        }
+                    ) {
+                        Text("Descargar")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { translationsViewModel.dismissDownloadDialog() }
+                    ) {
+                        Text("Cancelar")
+                    }
+                }
+            )
         }
     }
 
