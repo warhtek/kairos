@@ -13,10 +13,10 @@ val domainModule = module {
     single { GetBooksUseCase(get()) }
     single { GetVersesUseCase(get()) }
     single { SaveLastReadVerseUseCase(get()) }
-    single { GetOrDownloadChapterUseCase(get()) }  // ← Pasa el ChapterRepository
-
+    single { GetOrDownloadChapterUseCase(get()) }
+    single { GetDailyVerseUseCase(get()) }
+    
     // UseCases sin parámetros
     single { GetTranslationsUseCase() }
     single { SearchVerseUseCase() }
-    single { GetDailyVerseUseCase() }
 }

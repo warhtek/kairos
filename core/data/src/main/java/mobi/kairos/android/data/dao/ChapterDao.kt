@@ -20,4 +20,10 @@ interface ChapterDao {
 
     @Query("SELECT COUNT(*) FROM translation_book_chapters")
     suspend fun count(): Int
+
+    @Query("SELECT * FROM translation_book_chapters WHERE translationId = :translationId")
+    suspend fun getChaptersByTranslation(translationId: String): List<TranslationBookChapterEntity>
+    
+    @Query("SELECT * FROM translation_book_chapters WHERE translationId = :translationId AND bookId = :bookId ORDER BY chapterNumber ASC")
+    suspend fun getChaptersByBook(translationId: String, bookId: String): List<TranslationBookChapterEntity>
 }

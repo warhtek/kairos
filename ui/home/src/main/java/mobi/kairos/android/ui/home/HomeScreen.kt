@@ -99,6 +99,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import mobi.kairos.android.ui.translations.TranslationsUiState
+import androidx.compose.foundation.layout.heightIn
+import mobi.kairos.android.ui.search.SearchUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -629,10 +631,9 @@ fun HomeScreen(
         }
     }
 
-    // Translations bottom sheet
+// Translations bottom sheet
     if (showTranslationsSheet) {
         val downloadingId by translationsViewModel.downloadingTranslation.collectAsStateWithLifecycle()
-        val showDialog by translationsViewModel.showDownloadDialog.collectAsStateWithLifecycle()
         val selectedId by translationsViewModel.selectedTranslationId.collectAsStateWithLifecycle()
 
         ModalBottomSheet(
@@ -654,72 +655,86 @@ fun HomeScreen(
                 HorizontalDivider()
                 when (val state = translationsUiState) {
                     is mobi.kairos.android.ui.translations.TranslationsUiState.Success -> {
-                        LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                            items(state.translations) { translation ->
-                                val isSelected = selectedId == translation.id
-                                Clickable(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    onClick = {
-                                        if (translation.isDownloaded) {
+                        // Filtrar solo las traducciones descargadas
+                        val downloadedTranslations = state.translations.filter { it.isDownloaded }
+
+                        if (downloadedTranslations.isEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "No downloaded versions available",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        } else {
+                            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                                items(downloadedTranslations) { translation ->
+                                    val isSelected = selectedId == translation.id
+                                    Clickable(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        onClick = {
                                             translationsViewModel.selectTranslation(translation.id)
                                             viewModel.changeTranslation(translation.id)
                                             onTranslationChanged()
                                             scope.launch { translationsSheetState.hide() }
                                             showTranslationsSheet = false
                                         }
-                                    }
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 12.dp, horizontal = 16.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.SpaceBetween,
                                     ) {
-                                        // Información de la traducción
                                         Row(
-                                            modifier = Modifier.weight(1f),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 12.dp, horizontal = 16.dp),
                                             verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
                                         ) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(64.dp)
-                                                    .clip(RoundedCornerShape(12.dp))
-                                                    .background(
-                                                        if (isSelected)
-                                                            MaterialTheme.colorScheme.primaryContainer
-                                                        else
-                                                            MaterialTheme.colorScheme.secondaryContainer
-                                                    ),
-                                                contentAlignment = Alignment.Center,
+                                            // Información de la traducción
+                                            Row(
+                                                modifier = Modifier.weight(1f),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(16.dp),
                                             ) {
-                                                Text(
-                                                    text = translation.shortName.take(4),
-                                                    style = MaterialTheme.typography.labelLarge,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = if (isSelected)
-                                                        MaterialTheme.colorScheme.primary
-                                                    else
-                                                        MaterialTheme.colorScheme.onSecondaryContainer,
-                                                )
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(64.dp)
+                                                        .clip(RoundedCornerShape(12.dp))
+                                                        .background(
+                                                            if (isSelected)
+                                                                MaterialTheme.colorScheme.primaryContainer
+                                                            else
+                                                                MaterialTheme.colorScheme.secondaryContainer
+                                                        ),
+                                                    contentAlignment = Alignment.Center,
+                                                ) {
+                                                    Text(
+                                                        text = translation.shortName.take(4),
+                                                        style = MaterialTheme.typography.labelLarge,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = if (isSelected)
+                                                            MaterialTheme.colorScheme.primary
+                                                        else
+                                                            MaterialTheme.colorScheme.onSecondaryContainer,
+                                                    )
+                                                }
+                                                Column {
+                                                    Text(
+                                                        text = translation.languageName ?: translation.language,
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    )
+                                                    Text(
+                                                        text = translation.name,
+                                                        style = MaterialTheme.typography.bodyLarge,
+                                                        fontWeight = FontWeight.Medium,
+                                                    )
+                                                }
                                             }
-                                            Column {
-                                                Text(
-                                                    text = translation.languageName ?: translation.language,
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                )
-                                                Text(
-                                                    text = translation.name,
-                                                    style = MaterialTheme.typography.bodyLarge,
-                                                    fontWeight = FontWeight.Medium,
-                                                )
-                                            }
-                                        }
 
-                                        // Indicador de selección o botón de descarga
-                                        if (translation.isDownloaded) {
+                                            // Indicador de selección
                                             if (isSelected) {
                                                 Icon(
                                                     imageVector = Icons.Default.CheckCircle,
@@ -735,26 +750,10 @@ fun HomeScreen(
                                                     fontSize = 18.sp
                                                 )
                                             }
-                                        } else {
-                                            val isDownloading = downloadingId == translation.id
-                                            Button(
-                                                onClick = { translationsViewModel.showDownloadDialog(translation) },
-                                                enabled = !isDownloading,
-                                                modifier = Modifier.size(width = 100.dp, height = 36.dp),
-                                            ) {
-                                                if (isDownloading) {
-                                                    CircularProgressIndicator(
-                                                        modifier = Modifier.size(20.dp),
-                                                        strokeWidth = 2.dp
-                                                    )
-                                                } else {
-                                                    Text("Descargar", fontSize = 12.sp)
-                                                }
-                                            }
                                         }
                                     }
+                                    HorizontalDivider(modifier = Modifier.padding(start = 88.dp))
                                 }
-                                HorizontalDivider(modifier = Modifier.padding(start = 88.dp))
                             }
                         }
                     }
@@ -762,42 +761,18 @@ fun HomeScreen(
                 }
             }
         }
-
-        // Diálogo de confirmación de descarga
-        if (showDialog != null) {
-            AlertDialog(
-                onDismissRequest = { translationsViewModel.dismissDownloadDialog() },
-                title = { Text("Descargar versión") },
-                text = {
-                    Text("¿Deseas descargar \"${showDialog?.name}\"?\n\nEsta acción descargará aproximadamente ${getTranslationSize(showDialog?.id)} MB de datos.")
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            showDialog?.let { translationsViewModel.downloadTranslation(it) }
-                        }
-                    ) {
-                        Text("Descargar")
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = { translationsViewModel.dismissDownloadDialog() }
-                    ) {
-                        Text("Cancelar")
-                    }
-                }
-            )
-        }
     }
 
-    // Search bottom sheet
+// Search bottom sheet
     if (showSearchSheet) {
-        val suggestions by searchViewModel.suggestions.collectAsStateWithLifecycle()
-        val isTyping by searchViewModel.isTyping.collectAsStateWithLifecycle()
+        val searchResults by searchViewModel.searchResults.collectAsStateWithLifecycle()
+        val isSearching by searchViewModel.isSearching.collectAsStateWithLifecycle()
 
         ModalBottomSheet(
-            onDismissRequest = { showSearchSheet = false },
+            onDismissRequest = {
+                showSearchSheet = false
+                searchViewModel.clearResults()
+            },
             sheetState = searchSheetState,
         ) {
             Column(
@@ -806,118 +781,128 @@ fun HomeScreen(
                     .padding(bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Text(text = "Search Verse", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(text = "Example: Genesis 3:3", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    text = "Search Verse",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = "Examples: Salmos 3:3, Salmos 3, amor",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
 
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchViewModel.onQueryChanged(it) },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Ex: Genesis 3:3 or Salmos 23") },
+                    placeholder = { Text("Search by verse, chapter or word...") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(
                         onSearch = {
-                            searchViewModel.search((uiState as? HomeUiState.Success)?.translationId ?: "spa_bes")
+                            searchViewModel.search(
+                                (uiState as? HomeUiState.Success)?.translationId ?: "spa_bes"
+                            )
                         }
                     )
                 )
 
-                if (isTyping && suggestions.isNotEmpty()) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
-                            .padding(vertical = 8.dp)
-                    ) {
-                        suggestions.forEach { suggestion ->
-                            Clickable(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                                onClick = {
-                                    searchViewModel.selectSuggestion(suggestion)
-                                    searchViewModel.search((uiState as? HomeUiState.Success)?.translationId ?: "spa_bes")
-                                }
-                            ) {
-                                Text(text = suggestion.text, style = MaterialTheme.typography.bodyMedium)
-                            }
-                            if (suggestion != suggestions.last()) {
-                                HorizontalDivider()
-                            }
-                        }
-                    }
-                }
-
                 Button(
                     onClick = {
-                        searchViewModel.search((uiState as? HomeUiState.Success)?.translationId ?: "spa_bes")
+                        searchViewModel.search(
+                            (uiState as? HomeUiState.Success)?.translationId ?: "spa_bes"
+                        )
                     },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text("Search")
                 }
 
-                when (val state = searchUiState) {
-                    is mobi.kairos.android.ui.search.SearchUiState.Loading -> {
-                        Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                when {
+                    isSearching -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
                             CircularProgressIndicator()
                         }
                     }
-                    is mobi.kairos.android.ui.search.SearchUiState.NotFound -> {
+                    searchUiState is SearchUiState.NotFound -> {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer
+                            )
                         ) {
-                            Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(text = "Verse not found", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
-                                if (suggestions.isNotEmpty()) {
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(text = "Did you mean:", style = MaterialTheme.typography.bodySmall)
-                                    suggestions.take(3).forEach { suggestion ->
-                                        TextButton(
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "Verse not found",
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                                Text(
+                                    text = "Try: Genesis 1:1, Salmos 23, or a word like 'amor'",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.padding(top = 8.dp)
+                                )
+                            }
+                        }
+                    }
+                    searchResults.isNotEmpty() -> {
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.heightIn(max = 400.dp)
+                        ) {
+                            items(searchResults) { result ->
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                    )
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text(
+                                            text = "${result.bookName} ${result.chapterNumber}:${result.verseNumber}",
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary,
+                                        )
+                                        Text(
+                                            text = result.verseText,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            maxLines = 3,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                        )
+                                        Button(
                                             onClick = {
-                                                searchViewModel.selectSuggestion(suggestion)
-                                                searchViewModel.search((uiState as? HomeUiState.Success)?.translationId ?: "spa_bes")
-                                            }
+                                                viewModel.navigateToBook(
+                                                    result.bookId,
+                                                    result.bookName,
+                                                    result.chapterNumber,
+                                                    result.verseNumber,
+                                                )
+                                                scope.launch { searchSheetState.hide() }
+                                                showSearchSheet = false
+                                                searchViewModel.clearResults()
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
                                         ) {
-                                            Text(suggestion.text)
+                                            Text("Go to Verse")
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                    is mobi.kairos.android.ui.search.SearchUiState.Success -> {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(
-                                    text = "${state.bookName} ${state.chapterNumber}:${state.verseNumber}",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
-                                Text(text = state.verseText, style = MaterialTheme.typography.bodyLarge)
-                                Button(
-                                    onClick = {
-                                        viewModel.navigateToBook(state.bookId, state.bookName, state.chapterNumber, state.verseNumber)
-                                        scope.launch { searchSheetState.hide() }
-                                        showSearchSheet = false
-                                    },
-                                    modifier = Modifier.fillMaxWidth(),
-                                ) {
-                                    Text("Go to Verse")
-                                }
-                            }
-                        }
-                    }
-                    is mobi.kairos.android.ui.search.SearchUiState.Error -> {
-                        Text(text = state.message, color = MaterialTheme.colorScheme.error)
-                    }
-                    else -> {}
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
