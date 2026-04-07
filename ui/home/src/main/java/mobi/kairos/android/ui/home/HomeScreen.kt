@@ -162,7 +162,10 @@ fun HomeScreen(
         viewModel.initTts(context)
         onDispose { }
     }
-
+// Asegurar que TTS está listo cuando la pantalla se carga
+    LaunchedEffect(Unit) {
+        viewModel.ensureTtsReady(context)
+    }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val ttsState by viewModel.ttsState.collectAsStateWithLifecycle()
     val booksUiState by booksViewModel.uiState.collectAsStateWithLifecycle()
@@ -239,8 +242,13 @@ fun HomeScreen(
                                         // Botón Play
                                         FilledTonalIconButton(
                                             onClick = {
-                                                if (ttsState.isPlaying) viewModel.stopSpeaking()
-                                                else viewModel.speakCurrentChapter()
+                                                if (ttsState.isPlaying) {
+                                                    viewModel.stopSpeaking()
+                                                } else {
+                                                    // Asegurar que TTS está listo antes de hablar
+                                                    viewModel.ensureTtsReady(context)
+                                                    viewModel.speakCurrentChapter()
+                                                }
                                             },
                                             modifier = Modifier.size(40.dp),
                                         ) {

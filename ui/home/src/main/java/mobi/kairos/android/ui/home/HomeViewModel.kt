@@ -105,8 +105,15 @@ class HomeViewModel(
             return
         }
 
+        // Construir texto sin números de versículo
         currentSpeakText = verses.joinToString(" ") { verse ->
             verse.content.joinToString(" ") { it.toText() }
+        }
+
+        // Limitar a 2000 caracteres para evitar problemas
+        if (currentSpeakText.length > 2000) {
+            currentSpeakText = currentSpeakText.take(2000)
+            Log.w("HomeViewModel", "Text truncated to 2000 chars")
         }
 
         Log.d("HomeViewModel", "Speaking text length: ${currentSpeakText.length}")
@@ -277,19 +284,19 @@ class HomeViewModel(
     // Navigate to a specific book, chapter, and verse from SplashScreen (daily verse click)
     fun navigateToBook(bookId: String, bookName: String, chapterNumber: Int, verseNumber: Int) {
         Log.d("HomeViewModel", "Navigating to specific book: $bookName $chapterNumber:$verseNumber")
-        stopSpeaking()
+
+        // No detener el TTS al navegar
+        // stopSpeaking() // ← Comentar o eliminar esta línea
+
         viewModelScope.launch {
-            // Set flag to prevent loading last read verse
             isNavigatingFromSplash = true
             isInitialLoadCompleted = true
 
-            // Update current state with the new book, chapter, and verse
             currentBookId = bookId
             currentBookName = bookName
             currentChapterNumber = chapterNumber
             lastReadVerseNumber = verseNumber
 
-            // Load the chapter
             loadChapter()
         }
     }
@@ -297,13 +304,14 @@ class HomeViewModel(
     // Navigate to last read verse (called when pressing Bible button)
     fun navigateToLastReadVerse() {
         Log.d("HomeViewModel", "Navigating to last read verse")
-        stopSpeaking()
+
+        // No detener el TTS al navegar
+        // stopSpeaking() // ← Comentar o eliminar esta línea
+
         viewModelScope.launch {
-            // Set flag to indicate we're navigating from splash
             isNavigatingFromSplash = true
             isInitialLoadCompleted = true
 
-            // Load the last read verse
             getLastReadVerse()
                 .onSuccess { verse ->
                     if (verse != null) {
@@ -324,7 +332,6 @@ class HomeViewModel(
                 }
                 .onFailure { error ->
                     Log.e("HomeViewModel", "Failed to load last read verse", error)
-                    // Fallback to default
                     currentBookId = "GEN"
                     currentBookName = "Génesis"
                     currentChapterNumber = 1
@@ -354,6 +361,29 @@ class HomeViewModel(
     override fun onCleared() {
         super.onCleared()
         ttsManager?.shutdown()
+    }
+    // Reinicializar TTS si es necesario (manteniendo la misma instancia)
+    fun ensureTtsReady(context: Context) {
+        if (ttsManager == null) {
+            initTts(context)
+        } else if (!ttsManager?.isReady()!!) {
+            // Si el TTS existe pero no está listo, esperar
+            viewModelScope.launch {
+                var attempts = 0
+                while (!ttsManager?.isReady()!! && attempts < 10) {
+                    delay(500)
+                    attempts++
+                }
+                Log.d("HomeViewModel", "TTS ready after $attempts attempts")
+            }
+        }
+    }
+
+    // Reiniciar TTS completamente si es necesario
+    fun restartTts(context: Context) {
+        ttsManager?.shutdown()
+        ttsManager = null
+        initTts(context)
     }
 }
 
