@@ -1,19 +1,10 @@
-/*
- * © 2026 MOBIWARE. All rights reserved.
- *
- * This software and its source code are the exclusive property of MOBIWARE.
- * Any unauthorized use, reproduction, distribution, modification, or disclosure
- * of this software, whether in whole or in part, is strictly prohibited.
- *
- * Violations may result in severe civil and criminal penalties under applicable
- * copyright, intellectual property, and trade secret laws.
- */
 package mobi.kairos.android.ui.home
 
 import android.content.Context
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.speech.tts.Voice
+import android.util.Log
 import java.util.Locale
 
 class KairosTtsManager(context: Context) : TextToSpeech.OnInitListener {
@@ -34,6 +25,7 @@ class KairosTtsManager(context: Context) : TextToSpeech.OnInitListener {
     var onRangeStart: ((start: Int, end: Int) -> Unit)? = null
 
     override fun onInit(status: Int) {
+        Log.d("KairosTtsManager", "onInit called with status: $status")
         if (status == TextToSpeech.SUCCESS) {
             tts.language = Locale("es", "ES")
             isReady = true
@@ -46,31 +38,52 @@ class KairosTtsManager(context: Context) : TextToSpeech.OnInitListener {
                 ?: emptyList()
             currentVoice = availableVoices.firstOrNull()
             currentVoice?.let { tts.voice = it }
+            Log.d("KairosTtsManager", "TTS ready, voices: ${availableVoices.size}")
+        } else {
+            Log.e("KairosTtsManager", "TTS init failed with status: $status")
         }
     }
 
     fun speak(text: String) {
-        if (!isReady) return
+        Log.d("KairosTtsManager", "speak called, isReady=$isReady, text length=${text.length}")
+
+        if (!isReady) {
+            Log.w("KairosTtsManager", "TTS not ready, cannot speak")
+            return
+        }
+
+        if (text.isBlank()) {
+            Log.w("KairosTtsManager", "Empty text to speak")
+            return
+        }
+
+        stop()
+        
         tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "kairos_utterance")
         isPlaying = true
         onPlayingChanged?.invoke(true)
+
         tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-            override fun onStart(utteranceId: String?) {}
+            override fun onStart(utteranceId: String?) {
+                Log.d("KairosTtsManager", "onStart: $utteranceId")
+            }
 
             override fun onDone(utteranceId: String?) {
+                Log.d("KairosTtsManager", "onDone: $utteranceId")
                 isPlaying = false
                 onPlayingChanged?.invoke(false)
                 onRangeStart?.invoke(-1, -1)
             }
 
             override fun onError(utteranceId: String?) {
+                Log.e("KairosTtsManager", "onError: $utteranceId")
                 isPlaying = false
                 onPlayingChanged?.invoke(false)
                 onRangeStart?.invoke(-1, -1)
             }
 
-            // Called for each word being spoken
             override fun onRangeStart(utteranceId: String?, start: Int, end: Int, frame: Int) {
+                Log.d("KairosTtsManager", "onRangeStart: start=$start, end=$end")
                 onRangeStart?.invoke(start, end)
             }
         })
@@ -86,10 +99,13 @@ class KairosTtsManager(context: Context) : TextToSpeech.OnInitListener {
     fun setVoice(voice: Voice) {
         currentVoice = voice
         tts.voice = voice
+        Log.d("KairosTtsManager", "Voice set to: ${voice.name}")
     }
 
     fun shutdown() {
         tts.stop()
         tts.shutdown()
     }
+    
+    fun isReady(): Boolean = isReady
 }

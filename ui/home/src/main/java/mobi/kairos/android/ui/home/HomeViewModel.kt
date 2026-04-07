@@ -67,21 +67,49 @@ class HomeViewModel(
                 )
             }
         }
+
+        // Esperar activamente a que las voces estén disponibles
         viewModelScope.launch {
-            delay(1000)
-            _ttsState.value = _ttsState.value.copy(
-                availableVoices = ttsManager?.availableVoices ?: emptyList(),
-                currentVoice = ttsManager?.currentVoice,
-            )
+            var attempts = 0
+            var voicesLoaded = false
+
+            while (!voicesLoaded && attempts < 20) {
+                delay(500)
+                attempts++
+
+                val voices = ttsManager?.availableVoices
+                if (voices != null && voices.isNotEmpty()) {
+                    voicesLoaded = true
+                    _ttsState.value = _ttsState.value.copy(
+                        availableVoices = voices,
+                        currentVoice = ttsManager?.currentVoice
+                    )
+                    Log.d("HomeViewModel", "Voices loaded after $attempts attempts: ${voices.size} voices")
+                } else if (attempts >= 20) {
+                    Log.w("HomeViewModel", "Failed to load voices after $attempts attempts")
+                    _ttsState.value = _ttsState.value.copy(availableVoices = emptyList())
+                }
+            }
         }
+    }
+
+    fun isTtsReady(): Boolean {
+        return ttsManager?.isReady() == true && ttsManager?.availableVoices?.isNotEmpty() == true
     }
 
     private var currentSpeakText: String = ""
 
     fun speakCurrentChapter() {
+        if (verses.isEmpty()) {
+            Log.w("HomeViewModel", "No verses to speak")
+            return
+        }
+
         currentSpeakText = verses.joinToString(" ") { verse ->
             verse.content.joinToString(" ") { it.toText() }
         }
+
+        Log.d("HomeViewModel", "Speaking text length: ${currentSpeakText.length}")
         ttsManager?.speak(currentSpeakText)
     }
 

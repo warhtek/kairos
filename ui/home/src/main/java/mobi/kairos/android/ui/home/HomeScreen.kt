@@ -102,6 +102,7 @@ import mobi.kairos.android.ui.translations.TranslationsUiState
 import androidx.compose.foundation.layout.heightIn
 import mobi.kairos.android.ui.search.SearchUiState
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -1024,8 +1025,13 @@ private fun VerseItem(
     val localEnd = (highlightEnd - verseStart).coerceAtMost(verseText.length)
     val isHighlighted = highlightStart >= verseStart && highlightStart < verseEnd
 
+    // Log para depuración
+    LaunchedEffect(highlightStart, highlightEnd, verse.number) {
+        Log.d("VerseItem", "Verse ${verse.number}: verseStart=$verseStart, verseEnd=$verseEnd, highlightStart=$highlightStart, highlightEnd=$highlightEnd, localStart=$localStart, localEnd=$localEnd")
+    }
+
     val text = buildAnnotatedString {
-        withStyle(SpanStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color.Gray)) {
+        withStyle(SpanStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Gray)) {
             append("${verse.number} ")
         }
         if (isHighlighted && localEnd > localStart) {
