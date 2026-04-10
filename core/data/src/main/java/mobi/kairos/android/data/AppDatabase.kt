@@ -9,10 +9,12 @@ import mobi.kairos.android.data.dao.DatabaseInfoDao
 import mobi.kairos.android.data.dao.ReadingProgressDao
 import mobi.kairos.android.data.dao.TranslationBookDao
 import mobi.kairos.android.data.dao.TranslationDao
+import mobi.kairos.android.data.dao.FavoriteVerseDao
 import mobi.kairos.android.data.entity.ReadingProgressEntity
 import mobi.kairos.android.data.entity.TranslationBookChapterEntity
 import mobi.kairos.android.data.entity.TranslationBookEntity
 import mobi.kairos.android.data.entity.TranslationEntity
+import mobi.kairos.android.data.entity.FavoriteVerseEntity
 
 @Database(
     entities = [
@@ -20,6 +22,7 @@ import mobi.kairos.android.data.entity.TranslationEntity
         TranslationBookEntity::class,
         TranslationBookChapterEntity::class,
         ReadingProgressEntity::class,
+       // FavoriteVerseEntity::class,
     ],
     exportSchema = false,
     version = 2,
@@ -34,6 +37,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun translationBookDao(): TranslationBookDao
     abstract fun chapterDao(): ChapterDao
     abstract fun readingProgressDao(): ReadingProgressDao
+   // abstract fun favoriteVerseDao(): FavoriteVerseDao
 }
 
 internal fun databaseBuilder(context: Context, dbName: String, notifier: RoomNotifier): AppDatabase {
