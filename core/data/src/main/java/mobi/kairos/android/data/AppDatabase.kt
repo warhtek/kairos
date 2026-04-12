@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import mobi.kairos.android.data.dao.ChapterDao
 import mobi.kairos.android.data.dao.DatabaseInfoDao
 import mobi.kairos.android.data.dao.ReadingProgressDao
@@ -16,16 +18,35 @@ import mobi.kairos.android.data.entity.TranslationBookEntity
 import mobi.kairos.android.data.entity.TranslationEntity
 import mobi.kairos.android.data.entity.FavoriteVerseEntity
 
+// Migración de versión 2 a 3 (agrega tabla de favoritos)
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // Crear la tabla de favoritos
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS `favorite_verses` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `bookId` TEXT NOT NULL,
+                `bookName` TEXT NOT NULL,
+                `chapterNumber` INTEGER NOT NULL,
+                `verseNumber` INTEGER NOT NULL,
+                `verseText` TEXT NOT NULL,
+                `translationId` TEXT NOT NULL,
+                `dateAdded` INTEGER NOT NULL
+            )
+        """)
+    }
+}
+
 @Database(
     entities = [
         TranslationEntity::class,
         TranslationBookEntity::class,
         TranslationBookChapterEntity::class,
         ReadingProgressEntity::class,
-       // FavoriteVerseEntity::class,
+        FavoriteVerseEntity::class,
     ],
     exportSchema = false,
-    version = 2,
+    version = 3,  // ← CAMBIAR A 3
 )
 @androidx.room.TypeConverters(
     mobi.kairos.android.data.converter.TranslationBookChapterTypeConverters::class,
@@ -37,7 +58,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun translationBookDao(): TranslationBookDao
     abstract fun chapterDao(): ChapterDao
     abstract fun readingProgressDao(): ReadingProgressDao
-   // abstract fun favoriteVerseDao(): FavoriteVerseDao
+    abstract fun favoriteVerseDao(): FavoriteVerseDao
 }
 
 internal fun databaseBuilder(context: Context, dbName: String, notifier: RoomNotifier): AppDatabase {
@@ -46,7 +67,8 @@ internal fun databaseBuilder(context: Context, dbName: String, notifier: RoomNot
         klass = AppDatabase::class.java,
         name = dbName,
     )
-        .fallbackToDestructiveMigration(true)
+        .addMigrations(MIGRATION_2_3)  // ← AGREGAR LA MIGRACIÓN
+        .fallbackToDestructiveMigration(true)  // ← Se mantiene como respaldo
         .addCallback(notifier)
         .build()
 }

@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.ArrowCircleUp
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
@@ -47,6 +48,7 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -75,6 +77,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -95,12 +98,16 @@ import org.koin.androidx.compose.koinViewModel
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
-import mobi.kairos.android.ui.translations.TranslationsUiState
 import androidx.compose.foundation.layout.heightIn
 import mobi.kairos.android.ui.search.SearchUiState
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.ui.text.style.TextOverflow
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -156,18 +163,21 @@ fun HomeScreen(
 
     LaunchedEffect(Unit) {
         translationsViewModel.setContext(context)
+        viewModel.initTtsForFavorites(context)
     }
 
     DisposableEffect(Unit) {
         viewModel.initTts(context)
         onDispose { }
     }
-// Asegurar que TTS está listo cuando la pantalla se carga
+
     LaunchedEffect(Unit) {
         viewModel.ensureTtsReady(context)
     }
+
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val ttsState by viewModel.ttsState.collectAsStateWithLifecycle()
+    val favoriteIds by viewModel.favoriteIds.collectAsStateWithLifecycle()
     val booksUiState by booksViewModel.uiState.collectAsStateWithLifecycle()
     val translationsUiState by translationsViewModel.uiState.collectAsStateWithLifecycle()
     val searchUiState by searchViewModel.uiState.collectAsStateWithLifecycle()
@@ -185,6 +195,7 @@ fun HomeScreen(
     var expandedBookId by remember { mutableStateOf<String?>(null) }
     var sortAlphabetically by remember { mutableStateOf(false) }
     var showDailyVerseSheet by remember { mutableStateOf(false) }
+    var showFavoritesSheet by remember { mutableStateOf(false) }
 
     fun getTranslationSize(translationId: String?): String {
         return when (translationId) {
@@ -200,7 +211,6 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             Column {
-                // Primera fila de la TopBar (Navegación y acciones)
                 TopAppBar(
                     title = {
                         when (val state = uiState) {
@@ -210,12 +220,10 @@ fun HomeScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.Top,
                                 ) {
-                                    // Grupo izquierdo: Anterior, Play, Siguiente
                                     Row(
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
-                                        // Botón anterior
                                         TextButton(
                                             onClick = { viewModel.navigatePreviousChapter() },
                                             enabled = state.hasPrevious,
@@ -239,13 +247,11 @@ fun HomeScreen(
                                             }
                                         }
 
-                                        // Botón Play
                                         FilledTonalIconButton(
                                             onClick = {
                                                 if (ttsState.isPlaying) {
                                                     viewModel.stopSpeaking()
                                                 } else {
-                                                    // Asegurar que TTS está listo antes de hablar
                                                     viewModel.ensureTtsReady(context)
                                                     viewModel.speakCurrentChapter()
                                                 }
@@ -260,7 +266,6 @@ fun HomeScreen(
                                             )
                                         }
 
-                                        // Botón siguiente
                                         TextButton(
                                             onClick = { viewModel.navigateNextChapter() },
                                             enabled = state.hasNext,
@@ -285,8 +290,6 @@ fun HomeScreen(
                                         }
                                     }
 
-                                    // Grupo derecho: Acciones (se manejan en actions)
-                                    // Este espacio está vacío porque las acciones van en actions
                                     Spacer(modifier = Modifier.width(0.dp))
                                 }
                             }
@@ -296,15 +299,15 @@ fun HomeScreen(
                     actions = {
                         val currentState = uiState
                         if (currentState is HomeUiState.Success) {
-                            // Voice
-                            IconButton(onClick = { showVoiceSheet = true }) {
+                            IconButton(onClick = { showFavoritesSheet = true }) {
                                 Icon(
-                                    imageVector = Icons.Default.VolumeUp,
-                                    contentDescription = "Voice",
-                                    tint = MaterialTheme.colorScheme.onSurface
+                                    imageVector = Icons.Filled.Favorite,
+                                    contentDescription = "Favorites",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            // Versión (badge)
+                            Text(text = "Favorites", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(modifier = Modifier.width(9.dp))
                             Clickable(onClick = { showTranslationsSheet = true }) {
                                 Text(
                                     text = currentState.translationId.uppercase(),
@@ -319,7 +322,6 @@ fun HomeScreen(
                                         .padding(horizontal = 8.dp, vertical = 4.dp),
                                 )
                             }
-                            // Search
                             IconButton(onClick = { showSearchSheet = true }) {
                                 Icon(
                                     imageVector = Icons.Default.Search,
@@ -327,18 +329,9 @@ fun HomeScreen(
                                     tint = MaterialTheme.colorScheme.onSurface
                                 )
                             }
-                            /*// Today
-                            IconButton(onClick = { showDailyVerseSheet = true }) {
-                                Icon(
-                                    imageVector = Icons.Default.Today,
-                                    contentDescription = "Verse of the Day",
-                                    tint = MaterialTheme.colorScheme.onSurface
-                                )
-                            }*/
                         }
                     },
                 )
-                // Segunda fila: Botones de Libros y Versiones
                 when (val state = uiState) {
                     is HomeUiState.Success -> {
                         Row(
@@ -348,7 +341,6 @@ fun HomeScreen(
                             horizontalArrangement = Arrangement.spacedBy(16.dp),
                             verticalAlignment = Alignment.Top,
                         ) {
-                            // Botón de Libros
                             TextButton(
                                 onClick = { showBooksSheet = true },
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
@@ -361,8 +353,6 @@ fun HomeScreen(
                                     fontWeight = FontWeight.Bold,
                                 )
                             }
-
-
                         }
                     }
                     else -> {}
@@ -392,7 +382,6 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // 1. Search
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.weight(1f)
@@ -407,7 +396,6 @@ fun HomeScreen(
                         Text(text = "Search", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
 
-                    // 2. Books
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.weight(1f)
@@ -422,7 +410,6 @@ fun HomeScreen(
                         Text(text = "Books", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
 
-                    // 3. Today
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.weight(1f)
@@ -437,7 +424,6 @@ fun HomeScreen(
                         Text(text = "Today", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
 
-                    // 4. Version
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.weight(1f)
@@ -452,7 +438,6 @@ fun HomeScreen(
                         Text(text = "Version", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
 
-                    // 5. Voice
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.weight(1f)
@@ -482,6 +467,10 @@ fun HomeScreen(
                     verses = state.verses,
                     scrollToVerse = state.scrollToVerse,
                     onVerseVisible = { viewModel.onVerseVisible(it) },
+                    onFavoriteClick = { viewModel.toggleFavorite(it) },
+                    favoriteIds = favoriteIds,
+                    currentBookId = state.bookId,
+                    currentChapterNumber = state.chapterNumber,
                     highlightStart = ttsState.highlightStart,
                     highlightEnd = ttsState.highlightEnd,
                 )
@@ -640,7 +629,7 @@ fun HomeScreen(
         }
     }
 
-// Translations bottom sheet
+    // Translations bottom sheet
     if (showTranslationsSheet) {
         val downloadingId by translationsViewModel.downloadingTranslation.collectAsStateWithLifecycle()
         val selectedId by translationsViewModel.selectedTranslationId.collectAsStateWithLifecycle()
@@ -664,7 +653,6 @@ fun HomeScreen(
                 HorizontalDivider()
                 when (val state = translationsUiState) {
                     is mobi.kairos.android.ui.translations.TranslationsUiState.Success -> {
-                        // Filtrar solo las traducciones descargadas
                         val downloadedTranslations = state.translations.filter { it.isDownloaded }
 
                         if (downloadedTranslations.isEmpty()) {
@@ -701,7 +689,6 @@ fun HomeScreen(
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                         ) {
-                                            // Información de la traducción
                                             Row(
                                                 modifier = Modifier.weight(1f),
                                                 verticalAlignment = Alignment.CenterVertically,
@@ -743,7 +730,6 @@ fun HomeScreen(
                                                 }
                                             }
 
-                                            // Indicador de selección
                                             if (isSelected) {
                                                 Icon(
                                                     imageVector = Icons.Default.CheckCircle,
@@ -772,7 +758,7 @@ fun HomeScreen(
         }
     }
 
-// Search bottom sheet
+    // Search bottom sheet
     if (showSearchSheet) {
         val searchResults by searchViewModel.searchResults.collectAsStateWithLifecycle()
         val isSearching by searchViewModel.isSearching.collectAsStateWithLifecycle()
@@ -969,6 +955,180 @@ fun HomeScreen(
             }
         }
     }
+    // Favorites bottom sheet
+    if (showFavoritesSheet) {
+        val favoriteVerses by viewModel.favoriteVerses.collectAsStateWithLifecycle(initialValue = emptyList())
+        val playingFavoriteId by viewModel.playingFavoriteId.collectAsStateWithLifecycle()
+
+        ModalBottomSheet(
+            onDismissRequest = { showFavoritesSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp)
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "My Favorite Verses",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    IconButton(onClick = { showFavoritesSheet = false }) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                HorizontalDivider()
+
+                // Content
+                if (favoriteVerses.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.FavoriteBorder,
+                                contentDescription = "No favorites",
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            )
+                            Text(
+                                text = "No favorite verses yet",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "Tap the heart icon next to any verse to add it to your favorites",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(favoriteVerses) { favorite ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        viewModel.navigateToBook(
+                                            favorite.bookId,
+                                            favorite.bookName,
+                                            favorite.chapterNumber,
+                                            favorite.verseNumber
+                                        )
+                                        showFavoritesSheet = false
+                                    },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Text(
+                                            text = "${favorite.bookName} ${favorite.chapterNumber}:${favorite.verseNumber}",
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(
+                                            text = favorite.verseText.take(100) + if (favorite.verseText.length > 100) "..." else "",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(
+                                            text = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+                                                .format(java.util.Date(favorite.dateAdded)),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        // Botón Play/Stop
+                                        val isPlaying = playingFavoriteId == favorite.id
+
+                                        IconButton(
+                                            onClick = {
+                                                if (isPlaying) {
+                                                    viewModel.stopFavoritePlayback()
+                                                } else {
+                                                    viewModel.playFavoriteVerse(favorite)
+                                                }
+                                            }
+                                        ) {
+                                            Icon(
+                                                imageVector = if (isPlaying) Icons.Default.Stop else Icons.Default.PlayArrow,
+                                                contentDescription = if (isPlaying) "Stop" else "Play verse",
+                                                tint = if (isPlaying) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                        }
+
+                                        // Botón Eliminar
+                                        IconButton(
+                                            onClick = {
+                                                viewModel.removeFavoriteFromList(favorite)
+                                            }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Delete,
+                                                contentDescription = "Remove from favorites",
+                                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 }
 
 @Composable
@@ -976,6 +1136,10 @@ private fun ChapterContent(
     verses: List<ChapterVerse>,
     scrollToVerse: Int,
     onVerseVisible: (Int) -> Unit,
+    onFavoriteClick: (Int) -> Unit,
+    favoriteIds: Set<String>,
+    currentBookId: String,
+    currentChapterNumber: Int,
     highlightStart: Int = -1,
     highlightEnd: Int = -1,
 ) {
@@ -1002,9 +1166,12 @@ private fun ChapterContent(
         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
     ) {
         itemsIndexed(verses) { index, verse ->
+            val favoriteKey = "${currentBookId}_${currentChapterNumber}_${verse.number}"
             VerseItem(
                 verse = verse,
                 onVisible = { onVerseVisible(verse.number) },
+                onFavoriteClick = { onFavoriteClick(verse.number) },
+                isFavorite = favoriteIds.contains(favoriteKey),
                 highlightStart = highlightStart,
                 highlightEnd = highlightEnd,
                 verseOffset = verseOffsets.getOrElse(index) { 0 },
@@ -1018,6 +1185,8 @@ private fun ChapterContent(
 private fun VerseItem(
     verse: ChapterVerse,
     onVisible: () -> Unit,
+    onFavoriteClick: () -> Unit,
+    isFavorite: Boolean,
     highlightStart: Int = -1,
     highlightEnd: Int = -1,
     verseOffset: Int = 0,
@@ -1033,7 +1202,6 @@ private fun VerseItem(
     val localEnd = (highlightEnd - verseStart).coerceAtMost(verseText.length)
     val isHighlighted = highlightStart >= verseStart && highlightStart < verseEnd
 
-    // Log para depuración
     LaunchedEffect(highlightStart, highlightEnd, verse.number) {
         Log.d("VerseItem", "Verse ${verse.number}: verseStart=$verseStart, verseEnd=$verseEnd, highlightStart=$highlightStart, highlightEnd=$highlightEnd, localStart=$localStart, localEnd=$localEnd")
     }
@@ -1053,11 +1221,29 @@ private fun VerseItem(
         }
     }
 
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodyLarge,
-        lineHeight = 36.sp,
-        fontSize = 22.sp,
+    Row(
         modifier = Modifier.fillMaxWidth(),
-    )
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyLarge,
+            lineHeight = 36.sp,
+            fontSize = 22.sp,
+            modifier = Modifier.weight(1f)
+        )
+
+        IconButton(
+            onClick = onFavoriteClick,
+            modifier = Modifier.size(48.dp)
+        ) {
+            Icon(
+                imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                contentDescription = if (isFavorite) "Quitar de favoritos" else "Agregar a favoritos",
+                tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                modifier = Modifier.size(28.dp)
+            )
+        }
+    }
 }

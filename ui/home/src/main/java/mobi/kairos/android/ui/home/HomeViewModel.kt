@@ -28,6 +28,8 @@ import mobi.kairos.android.usecase.GetOrDownloadChapterUseCase
 import mobi.kairos.android.usecase.GetVersesUseCase
 import mobi.kairos.android.usecase.LastReadVerse
 import mobi.kairos.android.usecase.SaveLastReadVerseUseCase
+import mobi.kairos.android.repository.FavoritesRepository
+import mobi.kairos.android.model.FavoriteVerse
 
 class HomeViewModel(
     private val getLastReadVerse: GetLastReadVerseUseCase,
@@ -35,14 +37,20 @@ class HomeViewModel(
     private val saveLastReadVerse: SaveLastReadVerseUseCase,
     private val translationBookRepository: TranslationBookRepository,
     private val getOrDownloadChapter: GetOrDownloadChapterUseCase,
-
-    ) : ViewModel() {
+    private val favoritesRepository: FavoritesRepository,
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     private val _ttsState = MutableStateFlow(TtsState())
     val ttsState: StateFlow<TtsState> = _ttsState.asStateFlow()
+
+    private val _playingFavoriteId = MutableStateFlow<Long?>(null)
+    val playingFavoriteId: StateFlow<Long?> = _playingFavoriteId.asStateFlow()
+
+    private var ttsManagerForFavorites: KairosTtsManager? = null
+    private var currentFavoriteText: String = ""
 
     private var ttsManager: KairosTtsManager? = null
     private var verses: List<ChapterVerse> = emptyList()
@@ -54,6 +62,14 @@ class HomeViewModel(
     private var isNavigatingFromSplash: Boolean = false
     private var isInitialLoadCompleted: Boolean = false
     private var pendingLastReadVerse: LastReadVerse? = null
+
+    // Estado de favoritos
+    private val _favoriteIds = MutableStateFlow<Set<String>>(emptySet())
+    val favoriteIds: StateFlow<Set<String>> = _favoriteIds.asStateFlow()
+
+    // Estado para la lista de favoritos
+    private val _favoriteVerses = MutableStateFlow<List<FavoriteVerse>>(emptyList())
+    val favoriteVerses: StateFlow<List<FavoriteVerse>> = _favoriteVerses.asStateFlow()
 
     fun initTts(context: Context) {
         ttsManager = KairosTtsManager(context).also { manager ->
@@ -68,7 +84,6 @@ class HomeViewModel(
             }
         }
 
-        // Esperar activamente a que las voces estén disponibles
         viewModelScope.launch {
             var attempts = 0
             var voicesLoaded = false
@@ -105,12 +120,10 @@ class HomeViewModel(
             return
         }
 
-        // Construir texto sin números de versículo
         currentSpeakText = verses.joinToString(" ") { verse ->
             verse.content.joinToString(" ") { it.toText() }
         }
 
-        // Limitar a 2000 caracteres para evitar problemas
         if (currentSpeakText.length > 2000) {
             currentSpeakText = currentSpeakText.take(2000)
             Log.w("HomeViewModel", "Text truncated to 2000 chars")
@@ -136,7 +149,6 @@ class HomeViewModel(
         loadChapter()
     }
 
-    // Load last read verse - used when navigating to Bible from splash
     fun loadLastReadVerse() {
         viewModelScope.launch {
             getLastReadVerse()
@@ -146,16 +158,13 @@ class HomeViewModel(
                         pendingLastReadVerse = verse
 
                         if (!isNavigatingFromSplash && !isInitialLoadCompleted) {
-                            // Initial app launch - load last read verse
                             applyLastReadVerse(verse)
                         } else if (isNavigatingFromSplash) {
-                            // Navigating from Bible button - load last read verse
                             applyLastReadVerse(verse)
                             isNavigatingFromSplash = false
                         }
                     } else {
                         Log.d("HomeViewModel", "No last read verse found, using default: Genesis 1:1")
-                        // No saved verse, use default
                         if (!isInitialLoadCompleted) {
                             applyDefaultBook()
                         }
@@ -191,6 +200,59 @@ class HomeViewModel(
         Log.d("HomeViewModel", "Applied default book: Genesis 1:1")
     }
 
+    private fun loadFavorites() {
+        viewModelScope.launch {
+            favoritesRepository.getAllFavorites().collect { favorites ->
+                _favoriteIds.value = favorites.map { "${it.bookId}_${it.chapterNumber}_${it.verseNumber}" }.toSet()
+                _favoriteVerses.value = favorites
+                Log.d("HomeViewModel", "Loaded ${favorites.size} favorites")
+            }
+        }
+    }
+
+    fun toggleFavorite(verseNumber: Int) {
+        viewModelScope.launch {
+            val verse = verses.find { it.number == verseNumber }
+            if (verse == null) {
+                Log.e("HomeViewModel", "Verse $verseNumber not found")
+                return@launch
+            }
+
+            val verseText = verse.content.joinToString(" ") { it.toText() }
+            val key = "${currentBookId}_${currentChapterNumber}_${verseNumber}"
+            val isFav = _favoriteIds.value.contains(key)
+
+            if (isFav) {
+                favoritesRepository.removeFavorite(currentBookId, currentChapterNumber, verseNumber, currentTranslationId)
+                _favoriteIds.update { it - key }
+                _favoriteVerses.update { it.filter { fav -> !(fav.bookId == currentBookId && fav.chapterNumber == currentChapterNumber && fav.verseNumber == verseNumber) } }
+                Log.d("HomeViewModel", "Removed favorite: $key")
+            } else {
+                val favorite = FavoriteVerse(
+                    bookId = currentBookId,
+                    bookName = currentBookName,
+                    chapterNumber = currentChapterNumber,
+                    verseNumber = verseNumber,
+                    verseText = verseText,
+                    translationId = currentTranslationId
+                )
+                favoritesRepository.addFavorite(favorite)
+                _favoriteIds.update { it + key }
+                _favoriteVerses.update { it + favorite }
+                Log.d("HomeViewModel", "Added favorite: $key")
+            }
+        }
+    }
+
+    fun removeFavoriteFromList(favorite: FavoriteVerse) {
+        viewModelScope.launch {
+            favoritesRepository.removeFavorite(favorite)
+            _favoriteIds.update { it - "${favorite.bookId}_${favorite.chapterNumber}_${favorite.verseNumber}" }
+            _favoriteVerses.update { it.filter { it.id != favorite.id } }
+            Log.d("HomeViewModel", "Removed favorite from list: ${favorite.bookName} ${favorite.chapterNumber}:${favorite.verseNumber}")
+        }
+    }
+
     private fun loadChapter() {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
@@ -203,6 +265,7 @@ class HomeViewModel(
                         _uiState.value = HomeUiState.Empty
                     } else {
                         updateState()
+                        loadFavorites()
                     }
                 }
                 .onFailure {
@@ -213,9 +276,10 @@ class HomeViewModel(
     }
 
     private fun updateState() {
-        Log.d("HomeViewModel", "Updating state: bookName=$currentBookName bookId=$currentBookId chapter=$currentChapterNumber verse=$lastReadVerseNumber isNavigatingFromSplash=$isNavigatingFromSplash")
+        Log.d("HomeViewModel", "Updating state: bookName=$currentBookName bookId=$currentBookId chapter=$currentChapterNumber verse=$lastReadVerseNumber")
         _uiState.value = HomeUiState.Success(
             bookName = currentBookName,
+            bookId = currentBookId,
             chapterNumber = currentChapterNumber,
             translationId = currentTranslationId,
             verses = verses,
@@ -281,48 +345,33 @@ class HomeViewModel(
         }
     }
 
-    // Navigate to a specific book, chapter, and verse from SplashScreen (daily verse click)
     fun navigateToBook(bookId: String, bookName: String, chapterNumber: Int, verseNumber: Int) {
         Log.d("HomeViewModel", "Navigating to specific book: $bookName $chapterNumber:$verseNumber")
-
-        // No detener el TTS al navegar
-        // stopSpeaking() // ← Comentar o eliminar esta línea
-
         viewModelScope.launch {
             isNavigatingFromSplash = true
             isInitialLoadCompleted = true
-
             currentBookId = bookId
             currentBookName = bookName
             currentChapterNumber = chapterNumber
             lastReadVerseNumber = verseNumber
-
             loadChapter()
         }
     }
 
-    // Navigate to last read verse (called when pressing Bible button)
     fun navigateToLastReadVerse() {
         Log.d("HomeViewModel", "Navigating to last read verse")
-
-        // No detener el TTS al navegar
-        // stopSpeaking() // ← Comentar o eliminar esta línea
-
         viewModelScope.launch {
             isNavigatingFromSplash = true
             isInitialLoadCompleted = true
-
             getLastReadVerse()
                 .onSuccess { verse ->
                     if (verse != null) {
-                        Log.d("HomeViewModel", "Found last read verse: ${verse.bookName} ${verse.chapterNumber}:${verse.verseNumber}")
                         currentTranslationId = verse.translationId
                         currentBookId = verse.bookId
                         currentBookName = verse.bookName
                         currentChapterNumber = verse.chapterNumber
                         lastReadVerseNumber = verse.verseNumber
                     } else {
-                        Log.d("HomeViewModel", "No last read verse found, using default: Genesis 1:1")
                         currentBookId = "GEN"
                         currentBookName = "Génesis"
                         currentChapterNumber = 1
@@ -358,19 +407,18 @@ class HomeViewModel(
         }
     }
 
-    override fun onCleared() {
+   /* override fun onCleared() {
         super.onCleared()
         ttsManager?.shutdown()
-    }
-    // Reinicializar TTS si es necesario (manteniendo la misma instancia)
+    }*/
+
     fun ensureTtsReady(context: Context) {
         if (ttsManager == null) {
             initTts(context)
-        } else if (!ttsManager?.isReady()!!) {
-            // Si el TTS existe pero no está listo, esperar
+        } else if (ttsManager?.isReady() == false) {
             viewModelScope.launch {
                 var attempts = 0
-                while (!ttsManager?.isReady()!! && attempts < 10) {
+                while (ttsManager?.isReady() == false && attempts < 10) {
                     delay(500)
                     attempts++
                 }
@@ -379,11 +427,82 @@ class HomeViewModel(
         }
     }
 
-    // Reiniciar TTS completamente si es necesario
     fun restartTts(context: Context) {
         ttsManager?.shutdown()
         ttsManager = null
         initTts(context)
+    }
+
+// Reemplaza las funciones relacionadas con favoritos en HomeViewModel con estas:
+
+    fun initTtsForFavorites(context: Context) {
+        if (ttsManagerForFavorites == null) {
+            ttsManagerForFavorites = KairosTtsManager(context).also { manager ->
+                manager.onPlayingChanged = { playing ->
+                    Log.d("HomeViewModel", "TTS for favorites - playing changed: $playing")
+                    if (!playing) {
+                        // Cuando termina de reproducir, limpiar el estado
+                        _playingFavoriteId.value = null
+                    }
+                }
+            }
+        }
+    }
+
+    fun playFavoriteVerse(favorite: FavoriteVerse) {
+        Log.d("HomeViewModel", "playFavoriteVerse called: ${favorite.id}")
+
+        // Si ya se está reproduciendo el mismo, detenerlo
+        if (_playingFavoriteId.value == favorite.id) {
+            stopFavoritePlayback()
+            return
+        }
+
+        // Detener cualquier reproducción actual
+        stopFavoritePlayback()
+
+        // Asegurar que el TTS esté inicializado
+        if (ttsManagerForFavorites == null) {
+            Log.e("HomeViewModel", "TTS manager not initialized")
+            return
+        }
+
+        // Limpiar el estado anterior antes de reproducir
+        _playingFavoriteId.value = null
+
+        // Pequeña delay para asegurar limpieza
+        viewModelScope.launch {
+            delay(50)
+
+            // Verificar si TTS está listo
+            val isReady = ttsManagerForFavorites?.isReady() == true
+            Log.d("HomeViewModel", "TTS isReady: $isReady")
+
+            if (isReady) {
+                _playingFavoriteId.value = favorite.id
+                ttsManagerForFavorites?.speak(favorite.verseText)
+                Log.d("HomeViewModel", "Playing favorite: ${favorite.bookName} ${favorite.chapterNumber}:${favorite.verseNumber}")
+            } else {
+                Log.e("HomeViewModel", "TTS not ready, trying to speak anyway")
+                // Intentar hablar aunque no esté listo
+                _playingFavoriteId.value = favorite.id
+                ttsManagerForFavorites?.speak(favorite.verseText)
+            }
+        }
+    }
+
+    fun stopFavoritePlayback() {
+        Log.d("HomeViewModel", "stopFavoritePlayback called")
+        ttsManagerForFavorites?.stop()
+        _playingFavoriteId.value = null
+    }
+
+    // Limpiar TTS al cerrar
+// Modifica onCleared()
+    override fun onCleared() {
+        super.onCleared()
+        ttsManager?.shutdown()
+        ttsManagerForFavorites?.shutdown()
     }
 }
 
@@ -392,6 +511,7 @@ sealed class HomeUiState {
     object Empty : HomeUiState()
     data class Success(
         val bookName: String,
+        val bookId: String,
         val chapterNumber: Int,
         val translationId: String,
         val verses: List<ChapterVerse>,

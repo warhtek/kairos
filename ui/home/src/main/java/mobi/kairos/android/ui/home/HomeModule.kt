@@ -10,6 +10,7 @@
  */
 package mobi.kairos.android.ui.home
 
+import mobi.kairos.android.repository.FavoritesRepository
 import mobi.kairos.android.repository.TranslationBookRepository
 import mobi.kairos.android.usecase.GetLastReadVerseUseCase
 import mobi.kairos.android.usecase.GetOrDownloadChapterUseCase
@@ -26,6 +27,7 @@ val homeModule = module {
             get<SaveLastReadVerseUseCase>(),
             get<TranslationBookRepository>(),
             get<GetOrDownloadChapterUseCase>(),
+            get<FavoritesRepository>(),  // ← NUEVO
         )
     }
 }
