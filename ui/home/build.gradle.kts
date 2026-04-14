@@ -39,4 +39,5 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.compose.material.icons)
     implementation("androidx.compose.material:material-icons-extended:1.7.5")
+    implementation("io.insert-koin:koin-compose:1.1.0")
 }

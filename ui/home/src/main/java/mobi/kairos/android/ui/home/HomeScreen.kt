@@ -28,7 +28,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -36,8 +35,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowCircleDown
 import androidx.compose.material.icons.filled.ArrowCircleUp
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.PlayArrow
@@ -95,19 +92,16 @@ import mobi.kairos.android.ui.search.SearchViewModel
 import mobi.kairos.android.ui.splash.SplashViewModel
 import mobi.kairos.android.ui.translations.TranslationsViewModel
 import org.koin.androidx.compose.koinViewModel
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.AlertDialog
 import androidx.compose.foundation.layout.heightIn
 import mobi.kairos.android.ui.search.SearchUiState
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Stop
 import androidx.compose.ui.text.style.TextOverflow
+import mobi.kairos.android.ui.translations.TranslationsUiState
+import mobi.kairos.android.ui.translations.TranslationItem
+import androidx.compose.foundation.clickable
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -161,6 +155,7 @@ fun HomeScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
+
     LaunchedEffect(Unit) {
         translationsViewModel.setContext(context)
         viewModel.initTtsForFavorites(context)
@@ -196,6 +191,7 @@ fun HomeScreen(
     var sortAlphabetically by remember { mutableStateOf(false) }
     var showDailyVerseSheet by remember { mutableStateOf(false) }
     var showFavoritesSheet by remember { mutableStateOf(false) }
+
 
     fun getTranslationSize(translationId: String?): String {
         return when (translationId) {
@@ -629,8 +625,9 @@ fun HomeScreen(
         }
     }
 
-    // Translations bottom sheet
+// Translations bottom sheet
     if (showTranslationsSheet) {
+        val uiStateValue by translationsViewModel.uiState.collectAsStateWithLifecycle()
         val downloadingId by translationsViewModel.downloadingTranslation.collectAsStateWithLifecycle()
         val selectedId by translationsViewModel.selectedTranslationId.collectAsStateWithLifecycle()
 
@@ -651,11 +648,25 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.size(64.dp))
                 }
                 HorizontalDivider()
-                when (val state = translationsUiState) {
-                    is mobi.kairos.android.ui.translations.TranslationsUiState.Success -> {
-                        val downloadedTranslations = state.translations.filter { it.isDownloaded }
 
-                        if (downloadedTranslations.isEmpty()) {
+                // Guardar en variable local para smart cast
+                val currentState = uiStateValue
+
+                when (currentState) {
+                    is TranslationsUiState.Loading -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                    is TranslationsUiState.Success -> {
+                        val translations = currentState.translations
+
+                        if (translations.isEmpty()) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -663,73 +674,80 @@ fun HomeScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "No downloaded versions available",
+                                    text = "No versions available",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         } else {
                             LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                                items(downloadedTranslations) { translation ->
+                                items(translations) { translation ->
                                     val isSelected = selectedId == translation.id
-                                    Clickable(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        onClick = {
-                                            translationsViewModel.selectTranslation(translation.id)
-                                            viewModel.changeTranslation(translation.id)
-                                            onTranslationChanged()
-                                            scope.launch { translationsSheetState.hide() }
-                                            showTranslationsSheet = false
-                                        }
-                                    ) {
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(vertical = 12.dp, horizontal = 16.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.weight(1f),
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                            ) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(64.dp)
-                                                        .clip(RoundedCornerShape(12.dp))
-                                                        .background(
-                                                            if (isSelected)
-                                                                MaterialTheme.colorScheme.primaryContainer
-                                                            else
-                                                                MaterialTheme.colorScheme.secondaryContainer
-                                                        ),
-                                                    contentAlignment = Alignment.Center,
-                                                ) {
-                                                    Text(
-                                                        text = translation.shortName.take(4),
-                                                        style = MaterialTheme.typography.labelLarge,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = if (isSelected)
-                                                            MaterialTheme.colorScheme.primary
-                                                        else
-                                                            MaterialTheme.colorScheme.onSecondaryContainer,
-                                                    )
-                                                }
-                                                Column {
-                                                    Text(
-                                                        text = translation.languageName ?: translation.language,
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    )
-                                                    Text(
-                                                        text = translation.name,
-                                                        style = MaterialTheme.typography.bodyLarge,
-                                                        fontWeight = FontWeight.Medium,
-                                                    )
+                                    val isDownloading = downloadingId == translation.id
+
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                if (translation.isDownloaded) {
+                                                    translationsViewModel.selectTranslation(translation.id)
+                                                    viewModel.changeTranslation(translation.id)
+                                                    onTranslationChanged()
+                                                    scope.launch { translationsSheetState.hide() }
+                                                    showTranslationsSheet = false
                                                 }
                                             }
+                                            .padding(vertical = 12.dp, horizontal = 16.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.weight(1f),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(64.dp)
+                                                    .clip(RoundedCornerShape(12.dp))
+                                                    .background(
+                                                        if (isSelected)
+                                                            MaterialTheme.colorScheme.primaryContainer
+                                                        else
+                                                            MaterialTheme.colorScheme.secondaryContainer
+                                                    ),
+                                                contentAlignment = Alignment.Center,
+                                            ) {
+                                                Text(
+                                                    text = translation.shortName.take(4).uppercase(),
+                                                    style = MaterialTheme.typography.labelLarge,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = if (isSelected)
+                                                        MaterialTheme.colorScheme.primary
+                                                    else
+                                                        MaterialTheme.colorScheme.onSecondaryContainer,
+                                                )
+                                            }
+                                            Column {
+                                                Text(
+                                                    text = translation.languageName,
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                )
+                                                Text(
+                                                    text = translation.name,
+                                                    style = MaterialTheme.typography.bodyLarge,
+                                                    fontWeight = FontWeight.Medium,
+                                                )
+                                            }
+                                        }
 
+                                        if (isDownloading) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(24.dp),
+                                                strokeWidth = 2.dp
+                                            )
+                                        } else if (translation.isDownloaded) {
                                             if (isSelected) {
                                                 Icon(
                                                     imageVector = Icons.Default.CheckCircle,
@@ -745,6 +763,21 @@ fun HomeScreen(
                                                     fontSize = 18.sp
                                                 )
                                             }
+                                        } else {
+                                            Button(
+                                                onClick = {
+                                                    translationsViewModel.downloadTranslation(translation) { downloadedId ->
+                                                        viewModel.changeTranslation(downloadedId)
+                                                        onTranslationChanged()
+                                                        scope.launch { translationsSheetState.hide() }
+                                                        showTranslationsSheet = false
+                                                    }
+                                                },
+                                                modifier = Modifier.size(width = 80.dp, height = 32.dp),
+                                                contentPadding = PaddingValues(0.dp)
+                                            ) {
+                                                Text("Get", fontSize = 12.sp)
+                                            }
                                         }
                                     }
                                     HorizontalDivider(modifier = Modifier.padding(start = 88.dp))
@@ -752,7 +785,19 @@ fun HomeScreen(
                             }
                         }
                     }
-                    else -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally).padding(32.dp))
+                    is TranslationsUiState.Error -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Error loading versions",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
                 }
             }
         }

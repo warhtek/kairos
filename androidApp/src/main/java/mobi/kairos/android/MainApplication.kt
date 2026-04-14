@@ -23,13 +23,14 @@ import mobi.kairos.android.ui.search.searchModule
 import mobi.kairos.android.ui.splash.splashModule
 import mobi.kairos.android.ui.translations.translationsModule
 
+
 class MainApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         startKoin {
             androidLogger()
             androidContext(this@MainApplication)
-            modules(appModule,dataModule,domainModule, homeModule,booksModule,splashModule, searchModule,translationsModule)
+            modules(appModule,dataModule,domainModule, homeModule,booksModule,splashModule, searchModule, translationsModule)
         }
     }
 }

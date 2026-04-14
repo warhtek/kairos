@@ -23,6 +23,8 @@ import mobi.kairos.android.resource.CompleteTranslationAsset
 import mobi.kairos.android.data.AppDatabase
 import mobi.kairos.android.data.databaseBuilder
 import mobi.kairos.android.data.RoomNotifier
+import mobi.kairos.android.data.TranslationDownloader
+import mobi.kairos.android.data.dao.DownloadedTranslationDao
 import mobi.kairos.android.data.dao.FavoriteVerseDao
 import mobi.kairos.android.repository.FavoritesRepository
 import mobi.kairos.android.data.repository.FavoritesRepositoryImpl
@@ -36,6 +38,7 @@ val dataModule = module {
     single { get<AppDatabase>().translationBookDao() }
     single { get<AppDatabase>().chapterDao() }
     single { get<AppDatabase>().readingProgressDao() }
+    single<DownloadedTranslationDao> { get<AppDatabase>().downloadedTranslationDao() }
 
     // Asset Resource
     single<AssetResource> { AndroidAssetResource(androidContext()) }
@@ -53,4 +56,5 @@ val dataModule = module {
     single<ReadingProgressRepository> { ReadingProgressRepositoryImpl(get()) }
     single { get<AppDatabase>().favoriteVerseDao() }
     single<FavoritesRepository> { FavoritesRepositoryImpl(get()) }
-}
+
+    single { TranslationDownloader(androidContext(), get(), get(), get(), get()) }}

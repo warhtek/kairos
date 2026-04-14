@@ -12,16 +12,17 @@ import mobi.kairos.android.data.dao.ReadingProgressDao
 import mobi.kairos.android.data.dao.TranslationBookDao
 import mobi.kairos.android.data.dao.TranslationDao
 import mobi.kairos.android.data.dao.FavoriteVerseDao
+import mobi.kairos.android.data.dao.DownloadedTranslationDao
 import mobi.kairos.android.data.entity.ReadingProgressEntity
 import mobi.kairos.android.data.entity.TranslationBookChapterEntity
 import mobi.kairos.android.data.entity.TranslationBookEntity
 import mobi.kairos.android.data.entity.TranslationEntity
 import mobi.kairos.android.data.entity.FavoriteVerseEntity
+import mobi.kairos.android.data.entity.DownloadedTranslationEntity
 
 // Migración de versión 2 a 3 (agrega tabla de favoritos)
 val MIGRATION_2_3 = object : Migration(2, 3) {
     override fun migrate(database: SupportSQLiteDatabase) {
-        // Crear la tabla de favoritos
         database.execSQL("""
             CREATE TABLE IF NOT EXISTS `favorite_verses` (
                 `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -37,6 +38,18 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
     }
 }
 
+// Migración de versión 3 a 4 (agrega tabla de traducciones descargadas)
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS `downloaded_translations` (
+                `translationId` TEXT NOT NULL PRIMARY KEY,
+                `downloadedAt` INTEGER NOT NULL
+            )
+        """)
+    }
+}
+
 @Database(
     entities = [
         TranslationEntity::class,
@@ -44,9 +57,10 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
         TranslationBookChapterEntity::class,
         ReadingProgressEntity::class,
         FavoriteVerseEntity::class,
+        DownloadedTranslationEntity::class,
     ],
     exportSchema = false,
-    version = 3,  // ← CAMBIAR A 3
+    version = 4,
 )
 @androidx.room.TypeConverters(
     mobi.kairos.android.data.converter.TranslationBookChapterTypeConverters::class,
@@ -59,6 +73,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun chapterDao(): ChapterDao
     abstract fun readingProgressDao(): ReadingProgressDao
     abstract fun favoriteVerseDao(): FavoriteVerseDao
+    abstract fun downloadedTranslationDao(): DownloadedTranslationDao
 }
 
 internal fun databaseBuilder(context: Context, dbName: String, notifier: RoomNotifier): AppDatabase {
@@ -67,8 +82,8 @@ internal fun databaseBuilder(context: Context, dbName: String, notifier: RoomNot
         klass = AppDatabase::class.java,
         name = dbName,
     )
-        .addMigrations(MIGRATION_2_3)  // ← AGREGAR LA MIGRACIÓN
-        .fallbackToDestructiveMigration(true)  // ← Se mantiene como respaldo
+        .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
+        .fallbackToDestructiveMigration(true)
         .addCallback(notifier)
         .build()
 }
