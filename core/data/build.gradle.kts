@@ -99,4 +99,14 @@ dependencies {
     androidTestImplementation(libs.koin.test)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.junit.ktx)
+
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.android)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+
+    // Opcional: Para logging de peticiones
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
 }

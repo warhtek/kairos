@@ -1,6 +1,7 @@
 package mobi.kairos.android.data.di
 
 import org.koin.android.ext.koin.androidContext
+import org.koin.core.scope.get
 import org.koin.dsl.module
 import mobi.kairos.android.repository.DatabaseRepository
 import mobi.kairos.android.repository.TranslationRepository
@@ -12,6 +13,7 @@ import mobi.kairos.android.data.repository.TranslationRepositoryImpl
 import mobi.kairos.android.data.repository.TranslationBookRepositoryImpl
 import mobi.kairos.android.data.repository.ChapterRepositoryImpl
 import mobi.kairos.android.data.repository.ReadingProgressRepositoryImpl
+import mobi.kairos.android.data.repository.LocalTranslationRepository
 import mobi.kairos.android.data.resource.AndroidAssetResource
 import mobi.kairos.android.data.resource.TranslationsAssetImpl
 import mobi.kairos.android.data.resource.TranslationBooksAssetImpl
@@ -48,13 +50,34 @@ val dataModule = module {
     single<TranslationBooksAsset> { TranslationBooksAssetImpl(get()) }
     single<CompleteTranslationAsset> { CompleteTranslationAssetImpl(get()) }
 
+    // Local Translation Repository (para leer archivos descargados)
+    single<LocalTranslationRepository> {
+        LocalTranslationRepository(androidContext())
+    }
+
     // Repositorios
     single<DatabaseRepository> { DatabaseRepositoryImpl(get()) }
     single<TranslationRepository> { TranslationRepositoryImpl(get()) }
     single<TranslationBookRepository> { TranslationBookRepositoryImpl(get()) }
-    single<ChapterRepository> { ChapterRepositoryImpl(get()) }
+
+    // ChapterRepository ahora con 2 parámetros
+    single<ChapterRepository> {
+        ChapterRepositoryImpl(
+            chapterDao = get(),
+            localTranslationRepository = get()
+        )
+    }
+
     single<ReadingProgressRepository> { ReadingProgressRepositoryImpl(get()) }
     single { get<AppDatabase>().favoriteVerseDao() }
     single<FavoritesRepository> { FavoritesRepositoryImpl(get()) }
 
-    single { TranslationDownloader(androidContext(), get(), get(), get(), get()) }}
+    // TranslationDownloader - solo 2 parámetros
+    single<TranslationDownloader> {
+        TranslationDownloader(
+            androidContext(),
+            get()
+
+        )
+    }
+}

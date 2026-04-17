@@ -10,6 +10,7 @@
  */
 package mobi.kairos.android.data.converter
 
+import android.util.Log
 import androidx.room.TypeConverter
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
@@ -30,6 +31,8 @@ import mobi.kairos.android.model.ChapterInlineContent
 
 class TranslationBookChapterTypeConverters {
 
+    private val tag = "TypeConverter"
+
     private val json = Json {
         ignoreUnknownKeys = true
         coerceInputValues = true
@@ -49,21 +52,37 @@ class TranslationBookChapterTypeConverters {
                 subclass(VerseFootnoteReferenceModel::class)
             }
         }
-        classDiscriminator = "contentType"
+        classDiscriminator = "type"
     }
 
     @TypeConverter
     fun fromChapterContentList(content: List<ChapterContent>): String = json.encodeToString(content)
 
     @TypeConverter
-    fun toChapterContentList(content: String): List<ChapterContent> = json.decodeFromString(content)
+    fun toChapterContentList(content: String): List<ChapterContent> {
+        return try {
+            // Intentar parsear normalmente
+            json.decodeFromString(content)
+        } catch (e: Exception) {
+            // Si falla, intentar reemplazar "contentType" por "type"
+            try {
+                Log.d(tag, "Fixing JSON discriminator from contentType to type")
+                val fixedContent = content.replace("\"contentType\":", "\"type\":")
+                json.decodeFromString(fixedContent)
+            } catch (e2: Exception) {
+                Log.e(tag, "Error parsing chapter content", e2)
+                emptyList()
+            }
+        }
+    }
 
     @TypeConverter
     fun fromChapterFootnoteList(footnotes: List<ChapterFootnote>): String =
         json.encodeToString(footnotes.filterIsInstance<ChapterFootnoteModel>())
 
     @TypeConverter
-    fun toChapterFootnoteList(footnotes: String): List<ChapterFootnote> = json.decodeFromString<List<ChapterFootnoteModel>>(footnotes)
+    fun toChapterFootnoteList(footnotes: String): List<ChapterFootnote> =
+        json.decodeFromString<List<ChapterFootnoteModel>>(footnotes)
 
     @TypeConverter
     fun fromAudioLinks(links: Map<String, String>): String = json.encodeToString(links)
