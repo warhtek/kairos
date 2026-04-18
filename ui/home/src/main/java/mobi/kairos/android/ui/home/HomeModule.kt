@@ -18,6 +18,7 @@ import mobi.kairos.android.usecase.GetVersesUseCase
 import mobi.kairos.android.usecase.SaveLastReadVerseUseCase
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
+import mobi.kairos.android.data.repository.TtsPreferencesRepository
 
 val homeModule = module {
     viewModel<HomeViewModel> {
@@ -27,7 +28,8 @@ val homeModule = module {
             get<SaveLastReadVerseUseCase>(),
             get<TranslationBookRepository>(),
             get<GetOrDownloadChapterUseCase>(),
-            get<FavoritesRepository>(),  // ← NUEVO
+            get<FavoritesRepository>(),
+            get<TtsPreferencesRepository>()
         )
     }
 }

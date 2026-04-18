@@ -30,6 +30,7 @@ import mobi.kairos.android.data.dao.DownloadedTranslationDao
 import mobi.kairos.android.data.dao.FavoriteVerseDao
 import mobi.kairos.android.repository.FavoritesRepository
 import mobi.kairos.android.data.repository.FavoritesRepositoryImpl
+import mobi.kairos.android.data.repository.TtsPreferencesRepository
 
 val dataModule = module {
     // Database
@@ -80,4 +81,6 @@ val dataModule = module {
 
         )
     }
+
+    single<TtsPreferencesRepository> { TtsPreferencesRepository(androidContext()) }
 }

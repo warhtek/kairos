@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -52,6 +53,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -73,12 +75,14 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import mobi.kairos.android.model.ChapterVerse
+import mobi.kairos.android.model.FavoriteVerse
 import mobi.kairos.android.ui.books.BooksViewModel
 import mobi.kairos.android.ui.books.BooksUiState
 import mobi.kairos.android.ui.common.Clickable
@@ -89,17 +93,12 @@ import mobi.kairos.android.ui.splash.SplashUiState
 import mobi.kairos.android.ui.translations.TranslationsViewModel
 import mobi.kairos.android.ui.translations.TranslationsUiState
 import mobi.kairos.android.ui.translations.TranslationItem
-
 import org.koin.androidx.compose.koinViewModel
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.material3.AlertDialog
-
-
+import androidx.compose.ui.text.style.TextAlign
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -149,13 +148,13 @@ fun HomeScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
+    // Unificar la inicialización
     LaunchedEffect(Unit) {
         translationsViewModel.setContext(context)
-        viewModel.initTtsForFavorites(context)
+        viewModel.initTts(context)
     }
 
     DisposableEffect(Unit) {
-        viewModel.initTts(context)
         onDispose { }
     }
 
@@ -189,8 +188,11 @@ fun HomeScreen(
     var showConfirmDialog by remember { mutableStateOf(false) }
     var selectedTranslationToDownload by remember { mutableStateOf<TranslationItem?>(null) }
 
+    // Diálogo de confirmación para eliminar favorito
+    var showDeleteFavoriteDialog by remember { mutableStateOf(false) }
+    var favoriteToDelete by remember { mutableStateOf<FavoriteVerse?>(null) }
 
-    // Diálogo de confirmación
+    // Diálogo de confirmación para descarga
     if (showConfirmDialog && selectedTranslationToDownload != null) {
         AlertDialog(
             onDismissRequest = { showConfirmDialog = false },
@@ -217,6 +219,36 @@ fun HomeScreen(
         )
     }
 
+    // Diálogo de confirmación para eliminar favorito
+    if (showDeleteFavoriteDialog && favoriteToDelete != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showDeleteFavoriteDialog = false
+                favoriteToDelete = null
+            },
+            title = { Text("Eliminar favorito") },
+            text = {
+                Text("¿Estás seguro de que deseas eliminar este versículo de tus favoritos?\n\n${favoriteToDelete?.bookName} ${favoriteToDelete?.chapterNumber}:${favoriteToDelete?.verseNumber}")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        favoriteToDelete?.let { viewModel.removeFavoriteFromList(it) }
+                        showDeleteFavoriteDialog = false
+                        favoriteToDelete = null
+                    }
+                ) { Text("Eliminar", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteFavoriteDialog = false
+                        favoriteToDelete = null
+                    }
+                ) { Text("Cancelar") }
+            }
+        )
+    }
 
     fun getTranslationSize(translationId: String?): String = when (translationId) {
         "spa_bes" -> "5.2"
@@ -232,7 +264,7 @@ fun HomeScreen(
             Column {
                 TopAppBar(
                     title = {
-                        val currentUiState = uiState  // ← Guardar en variable local
+                        val currentUiState = uiState
                         when (currentUiState) {
                             is HomeUiState.Success -> {
                                 Row(
@@ -397,7 +429,7 @@ fun HomeScreen(
         },
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
-            val currentUiState = uiState  // ← Guardar en variable local
+            val currentUiState = uiState
             when (currentUiState) {
                 is HomeUiState.Loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 is HomeUiState.Empty -> Text("No verses available", modifier = Modifier.align(Alignment.Center).padding(24.dp))
@@ -748,6 +780,38 @@ fun HomeScreen(
                         showVoiceSheet = false
                     }
                 ) { Text("+ Install more voices", color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(16.dp)) }
+
+                // Controles de velocidad y tono
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Speech Settings", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp))
+                HorizontalDivider()
+
+                var currentRate by remember { mutableStateOf(ttsState.currentRate) }
+                var currentPitch by remember { mutableStateOf(ttsState.currentPitch) }
+
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Velocidad del habla")
+                    Slider(
+                        value = currentRate,
+                        onValueChange = {
+                            currentRate = it
+                            viewModel.setSpeechRate(it)
+                        },
+                        valueRange = 0.5f..2.0f
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text("Tono")
+                    Slider(
+                        value = currentPitch,
+                        onValueChange = {
+                            currentPitch = it
+                            viewModel.setPitch(it)
+                        },
+                        valueRange = 0.5f..2.0f
+                    )
+                }
             }
         }
     }
@@ -758,7 +822,11 @@ fun HomeScreen(
         val playingFavoriteId by viewModel.playingFavoriteId.collectAsStateWithLifecycle()
 
         ModalBottomSheet(
-            onDismissRequest = { showFavoritesSheet = false },
+            onDismissRequest = {
+                showFavoritesSheet = false
+                showDeleteFavoriteDialog = false
+                favoriteToDelete = null
+            },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
             Column(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)) {
@@ -776,7 +844,12 @@ fun HomeScreen(
                         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             Icon(Icons.Outlined.FavoriteBorder, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
                             Text("No favorite verses yet", style = MaterialTheme.typography.bodyLarge)
-                            Text("Tap the heart icon next to any verse to add it to your favorites", style = MaterialTheme.typography.bodySmall, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                            Text(
+                                text = "Tap the heart icon next to any verse to add it to your favorites",
+                                style = MaterialTheme.typography.bodySmall,
+                                textAlign = TextAlign.Center,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                     }
                 } else {
@@ -815,7 +888,10 @@ fun HomeScreen(
                                         }) {
                                             Icon(if (isPlaying) Icons.Default.Stop else Icons.Default.PlayArrow, null, tint = if (isPlaying) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
                                         }
-                                        IconButton(onClick = { viewModel.removeFavoriteFromList(favorite) }) {
+                                        IconButton(onClick = {
+                                            favoriteToDelete = favorite
+                                            showDeleteFavoriteDialog = true
+                                        }) {
                                             Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f), modifier = Modifier.size(20.dp))
                                         }
                                     }

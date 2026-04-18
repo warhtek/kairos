@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import mobi.kairos.android.data.repository.TtsPreferencesRepository
 import mobi.kairos.android.model.ChapterVerse
 import mobi.kairos.android.repository.TranslationBookRepository
 import mobi.kairos.android.usecase.GetLastReadVerseUseCase
@@ -38,6 +39,7 @@ class HomeViewModel(
     private val translationBookRepository: TranslationBookRepository,
     private val getOrDownloadChapter: GetOrDownloadChapterUseCase,
     private val favoritesRepository: FavoritesRepository,
+    private val ttsPreferencesRepo: TtsPreferencesRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
@@ -48,9 +50,6 @@ class HomeViewModel(
 
     private val _playingFavoriteId = MutableStateFlow<Long?>(null)
     val playingFavoriteId: StateFlow<Long?> = _playingFavoriteId.asStateFlow()
-
-    private var ttsManagerForFavorites: KairosTtsManager? = null
-    private var currentFavoriteText: String = ""
 
     private var ttsManager: KairosTtsManager? = null
     private var verses: List<ChapterVerse> = emptyList()
@@ -72,7 +71,7 @@ class HomeViewModel(
     val favoriteVerses: StateFlow<List<FavoriteVerse>> = _favoriteVerses.asStateFlow()
 
     fun initTts(context: Context) {
-        ttsManager = KairosTtsManager(context).also { manager ->
+        ttsManager = KairosTtsManager.getInstance(context, ttsPreferencesRepo).also { manager ->
             manager.onPlayingChanged = { playing ->
                 _ttsState.value = _ttsState.value.copy(isPlaying = playing)
             }
@@ -107,6 +106,19 @@ class HomeViewModel(
             }
         }
     }
+    // En HomeViewModel.kt, agrega esta función para compatibilidad
+    fun initTtsForFavorites(context: Context) {
+        initTts(context)
+    }
+    fun setSpeechRate(rate: Float) {
+        ttsManager?.setSpeechRate(rate)
+        _ttsState.value = _ttsState.value.copy(currentRate = rate)
+    }
+
+    fun setPitch(pitch: Float) {
+        ttsManager?.setPitch(pitch)
+        _ttsState.value = _ttsState.value.copy(currentPitch = pitch)
+    }
 
     fun isTtsReady(): Boolean {
         return ttsManager?.isReady() == true && ttsManager?.availableVoices?.isNotEmpty() == true
@@ -120,16 +132,17 @@ class HomeViewModel(
             return
         }
 
-        currentSpeakText = verses.joinToString(" ") { verse ->
-            verse.content.joinToString(" ") { it.toText() }
+        currentSpeakText = buildString {
+            verses.forEachIndexed { index, verse ->
+                val verseText = verse.content.joinToString(" ") { it.toText() }
+                append(verseText)
+                if (index < verses.lastIndex) {
+                    append(". ")
+                }
+            }
         }
 
-        if (currentSpeakText.length > 2000) {
-            currentSpeakText = currentSpeakText.take(2000)
-            Log.w("HomeViewModel", "Text truncated to 2000 chars")
-        }
-
-        Log.d("HomeViewModel", "Speaking text length: ${currentSpeakText.length}")
+        Log.d("HomeViewModel", "Speaking text length: ${currentSpeakText.length} characters")
         ttsManager?.speak(currentSpeakText)
     }
 
@@ -407,11 +420,6 @@ class HomeViewModel(
         }
     }
 
-   /* override fun onCleared() {
-        super.onCleared()
-        ttsManager?.shutdown()
-    }*/
-
     fun ensureTtsReady(context: Context) {
         if (ttsManager == null) {
             initTts(context)
@@ -433,76 +441,50 @@ class HomeViewModel(
         initTts(context)
     }
 
-// Reemplaza las funciones relacionadas con favoritos en HomeViewModel con estas:
-
-    fun initTtsForFavorites(context: Context) {
-        if (ttsManagerForFavorites == null) {
-            ttsManagerForFavorites = KairosTtsManager(context).also { manager ->
-                manager.onPlayingChanged = { playing ->
-                    Log.d("HomeViewModel", "TTS for favorites - playing changed: $playing")
-                    if (!playing) {
-                        // Cuando termina de reproducir, limpiar el estado
-                        _playingFavoriteId.value = null
-                    }
-                }
-            }
-        }
-    }
+    // ============ Funciones para favoritos usando el mismo TTS Manager ============
 
     fun playFavoriteVerse(favorite: FavoriteVerse) {
         Log.d("HomeViewModel", "playFavoriteVerse called: ${favorite.id}")
 
-        // Si ya se está reproduciendo el mismo, detenerlo
         if (_playingFavoriteId.value == favorite.id) {
             stopFavoritePlayback()
             return
         }
 
-        // Detener cualquier reproducción actual
         stopFavoritePlayback()
 
-        // Asegurar que el TTS esté inicializado
-        if (ttsManagerForFavorites == null) {
+        if (ttsManager == null) {
             Log.e("HomeViewModel", "TTS manager not initialized")
             return
         }
 
-        // Limpiar el estado anterior antes de reproducir
         _playingFavoriteId.value = null
 
-        // Pequeña delay para asegurar limpieza
         viewModelScope.launch {
             delay(50)
 
-            // Verificar si TTS está listo
-            val isReady = ttsManagerForFavorites?.isReady() == true
+            val isReady = ttsManager?.isReady() == true
             Log.d("HomeViewModel", "TTS isReady: $isReady")
 
             if (isReady) {
                 _playingFavoriteId.value = favorite.id
-                ttsManagerForFavorites?.speak(favorite.verseText)
+                ttsManager?.speak(favorite.verseText)
                 Log.d("HomeViewModel", "Playing favorite: ${favorite.bookName} ${favorite.chapterNumber}:${favorite.verseNumber}")
             } else {
-                Log.e("HomeViewModel", "TTS not ready, trying to speak anyway")
-                // Intentar hablar aunque no esté listo
-                _playingFavoriteId.value = favorite.id
-                ttsManagerForFavorites?.speak(favorite.verseText)
+                Log.e("HomeViewModel", "TTS not ready")
             }
         }
     }
 
     fun stopFavoritePlayback() {
         Log.d("HomeViewModel", "stopFavoritePlayback called")
-        ttsManagerForFavorites?.stop()
+        ttsManager?.stop()
         _playingFavoriteId.value = null
     }
 
-    // Limpiar TTS al cerrar
-// Modifica onCleared()
     override fun onCleared() {
         super.onCleared()
         ttsManager?.shutdown()
-        ttsManagerForFavorites?.shutdown()
     }
 }
 
@@ -528,4 +510,6 @@ data class TtsState(
     val currentVoice: android.speech.tts.Voice? = null,
     val highlightStart: Int = -1,
     val highlightEnd: Int = -1,
+    val currentRate: Float = 0.9f,  // ← Agregar
+    val currentPitch: Float = 1.0f,
 )

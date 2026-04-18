@@ -21,6 +21,7 @@ android {
 dependencies {
     implementation(project(":ui:common"))
     implementation(project(":core:domain"))
+    implementation(project(":core:data"))
     implementation(project(":ui:books"))
     implementation(project(":ui:search"))
     implementation(project(":ui:translations"))
@@ -32,6 +33,7 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.compose.ui.text)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.compose.ui.test)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
