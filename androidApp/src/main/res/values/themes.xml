@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Minimal" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Kairos" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:colorPrimary">#3B82F6</item>
+        <item name="android:colorPrimaryDark">#2563EB</item>
+        <item name="android:colorAccent">#3B82F6</item>
+        <item name="android:windowBackground">@color/white</item>
+        <item name="android:statusBarColor">#3B82F6</item>
+    </style>
 </resources>

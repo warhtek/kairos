@@ -98,6 +98,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.QuestionAnswer
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.ui.text.style.TextAlign
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -152,6 +155,7 @@ fun HomeScreen(
     LaunchedEffect(Unit) {
         translationsViewModel.setContext(context)
         viewModel.initTts(context)
+        viewModel.connectToAgent()
     }
 
     DisposableEffect(Unit) {
@@ -191,6 +195,7 @@ fun HomeScreen(
     // Diálogo de confirmación para eliminar favorito
     var showDeleteFavoriteDialog by remember { mutableStateOf(false) }
     var favoriteToDelete by remember { mutableStateOf<FavoriteVerse?>(null) }
+
 
     // Diálogo de confirmación para descarga
     if (showConfirmDialog && selectedTranslationToDownload != null) {
@@ -428,6 +433,7 @@ fun HomeScreen(
             }
         },
     ) { innerPadding ->
+// ✅ Código correcto
         Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
             val currentUiState = uiState
             when (currentUiState) {
@@ -446,6 +452,34 @@ fun HomeScreen(
                 )
                 is HomeUiState.Error -> Text("Error: ${currentUiState.message}", modifier = Modifier.align(Alignment.Center).padding(24.dp))
             }
+
+            val showChat by viewModel.showChatScreen.collectAsStateWithLifecycle()
+
+            if (showChat) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background)
+                ) {
+                    ChatScreen(
+                        viewModel = viewModel,
+                        onClose = { viewModel.toggleChatScreen() }
+                    )
+                }
+            }
+            // FAB solo visible cuando el chat NO está abierto
+            if (!showChat) {
+                FloatingActionButton(
+                    onClick = { viewModel.toggleChatScreen() },
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .align(Alignment.BottomEnd),
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Icon(Icons.Default.QuestionAnswer, contentDescription = "Chat IA")
+                }
+            }
+        
         }
     }
 
@@ -456,19 +490,90 @@ fun HomeScreen(
             onDismissRequest = { showDailyVerseSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
-            Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
-                Text("Verse of the Day", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                HorizontalDivider()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+                    .padding(bottom = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,  // ← Centrar horizontalmente
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Verso del Día",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center  // ← Centrar texto
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 when (val state = dailyUiState) {
-                    is SplashUiState.Loading -> CircularProgressIndicator()
-                    is SplashUiState.Success -> {
-                        Text("${state.verse.bookName} ${state.verse.chapterNumber}:${state.verse.verseNumber}")
-                        Text("\"${state.verse.verseText}\"")
-                        Button(onClick = { onNavigateToSplash(); showDailyVerseSheet = false }) {
-                            Text("View Verse of the Day")
+                    is SplashUiState.Loading -> {
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
                         }
                     }
-                    else -> Text("Not available")
+                    is SplashUiState.Success -> {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            // Referencia del versículo
+                            Text(
+                                text = "${state.verse.bookName} ${state.verse.chapterNumber}:${state.verse.verseNumber}",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // Texto del versículo
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                ),
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Text(
+                                    text = state.verse.verseText,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(20.dp),
+                                    lineHeight = 26.sp
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            // Botón para ir al versículo
+                            Button(
+                                onClick = {
+                                    onNavigateToSplash()
+                                    showDailyVerseSheet = false
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text("Ver en la Biblia")
+                            }
+                        }
+                    }
+                    else -> {
+                        Text(
+                            text = "No disponible",
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
             }
         }

@@ -3,6 +3,7 @@ package mobi.kairos.android.data.di
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.scope.get
 import org.koin.dsl.module
+import mobi.kairos.android.data.AgentClient
 import mobi.kairos.android.repository.DatabaseRepository
 import mobi.kairos.android.repository.TranslationRepository
 import mobi.kairos.android.repository.TranslationBookRepository
@@ -31,6 +32,7 @@ import mobi.kairos.android.data.dao.FavoriteVerseDao
 import mobi.kairos.android.repository.FavoritesRepository
 import mobi.kairos.android.data.repository.FavoritesRepositoryImpl
 import mobi.kairos.android.data.repository.TtsPreferencesRepository
+
 
 val dataModule = module {
     // Database
@@ -83,4 +85,6 @@ val dataModule = module {
     }
 
     single<TtsPreferencesRepository> { TtsPreferencesRepository(androidContext()) }
+    // Agregar el cliente como single
+    single<AgentClient> { AgentClient(androidContext()) }
 }

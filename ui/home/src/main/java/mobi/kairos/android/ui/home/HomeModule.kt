@@ -10,6 +10,7 @@
  */
 package mobi.kairos.android.ui.home
 
+import org.koin.android.ext.koin.androidContext
 import mobi.kairos.android.repository.FavoritesRepository
 import mobi.kairos.android.repository.TranslationBookRepository
 import mobi.kairos.android.usecase.GetLastReadVerseUseCase
@@ -18,6 +19,7 @@ import mobi.kairos.android.usecase.GetVersesUseCase
 import mobi.kairos.android.usecase.SaveLastReadVerseUseCase
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
+import mobi.kairos.android.data.AgentClient
 import mobi.kairos.android.data.repository.TtsPreferencesRepository
 
 val homeModule = module {
@@ -29,7 +31,9 @@ val homeModule = module {
             get<TranslationBookRepository>(),
             get<GetOrDownloadChapterUseCase>(),
             get<FavoritesRepository>(),
-            get<TtsPreferencesRepository>()
+            get<TtsPreferencesRepository>(),
+            get<AgentClient>(),
+            androidContext()
         )
     }
 }
