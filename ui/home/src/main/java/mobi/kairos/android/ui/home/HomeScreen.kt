@@ -102,6 +102,8 @@ import androidx.compose.material.icons.filled.QuestionAnswer
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -656,11 +658,15 @@ fun HomeScreen(
         }
     }
 
-    // Translations bottom sheet
+// Translations bottom sheet
     if (showTranslationsSheet) {
         val uiStateValue by translationsViewModel.uiState.collectAsStateWithLifecycle()
         val downloadingId by translationsViewModel.downloadingTranslation.collectAsStateWithLifecycle()
         val selectedId by translationsViewModel.selectedTranslationId.collectAsStateWithLifecycle()
+
+        // Estado para el diálogo de confirmación de eliminación
+        var translationToDelete by remember { mutableStateOf<TranslationItem?>(null) }
+        var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
         ModalBottomSheet(
             onDismissRequest = { showTranslationsSheet = false },
@@ -698,21 +704,23 @@ fun HomeScreen(
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .clickable {
-                                                if (translation.isDownloaded) {
-                                                    translationsViewModel.selectTranslation(translation.id)
-                                                    viewModel.changeTranslation(translation.id)
-                                                    onTranslationChanged()
-                                                    scope.launch { translationsSheetState.hide() }
-                                                    showTranslationsSheet = false
-                                                }
-                                            }
                                             .padding(vertical = 12.dp, horizontal = 16.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                     ) {
+                                        // Parte clickeable para seleccionar (solo si está descargada)
                                         Row(
-                                            modifier = Modifier.weight(1f),
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clickable(enabled = translation.isDownloaded && !isDownloading) {
+                                                    if (translation.isDownloaded) {
+                                                        translationsViewModel.selectTranslation(translation.id)
+                                                        viewModel.changeTranslation(translation.id)
+                                                        onTranslationChanged()
+                                                        scope.launch { translationsSheetState.hide() }
+                                                        showTranslationsSheet = false
+                                                    }
+                                                },
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.spacedBy(16.dp),
                                         ) {
@@ -740,13 +748,34 @@ fun HomeScreen(
                                             }
                                         }
 
+                                        // Acciones (descargar / eliminar)
                                         if (isDownloading) {
                                             CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                                         } else if (translation.isDownloaded) {
-                                            if (isSelected) {
-                                                Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.primary)
-                                            } else {
-                                                Text("✓", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                if (isSelected) {
+                                                    Icon(
+                                                        Icons.Default.CheckCircle,
+                                                        null,
+                                                        tint = MaterialTheme.colorScheme.primary,
+                                                        modifier = Modifier.size(24.dp)
+                                                    )
+                                                }
+                                                // Botón de eliminar
+                                                IconButton(
+                                                    onClick = {
+                                                        translationToDelete = translation
+                                                        showDeleteConfirmDialog = true
+                                                    },
+                                                    modifier = Modifier.size(32.dp)
+                                                ) {
+                                                    Icon(
+                                                        Icons.Default.Delete,
+                                                        contentDescription = "Eliminar",
+                                                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                                                        modifier = Modifier.size(20.dp)
+                                                    )
+                                                }
                                             }
                                         } else {
                                             Button(
@@ -772,6 +801,190 @@ fun HomeScreen(
                         }
                     }
                 }
+            }
+        }
+
+// Translations bottom sheet
+        if (showTranslationsSheet) {
+            val uiStateValue by translationsViewModel.uiState.collectAsStateWithLifecycle()
+            val downloadingId by translationsViewModel.downloadingTranslation.collectAsStateWithLifecycle()
+            val selectedId by translationsViewModel.selectedTranslationId.collectAsStateWithLifecycle()
+
+            // Estado para el diálogo de confirmación de eliminación
+            var translationToDelete by remember { mutableStateOf<TranslationItem?>(null) }
+            var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+
+            ModalBottomSheet(
+                onDismissRequest = { showTranslationsSheet = false },
+                sheetState = translationsSheetState,
+            ) {
+                Column(modifier = Modifier.padding(bottom = 32.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        TextButton(onClick = { showTranslationsSheet = false }) { Text("Cancel") }
+                        Text("My Versions", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.size(64.dp))
+                    }
+                    HorizontalDivider()
+
+                    when (val state = uiStateValue) {
+                        is TranslationsUiState.Loading -> {
+                            Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator()
+                            }
+                        }
+                        is TranslationsUiState.Success -> {
+                            val translations = state.translations
+                            if (translations.isEmpty()) {
+                                Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                                    Text("No versions available")
+                                }
+                            } else {
+                                LazyColumn {
+                                    items(translations) { translation ->
+                                        val isSelected = selectedId == translation.id
+                                        val isDownloading = downloadingId == translation.id
+
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 12.dp, horizontal = 16.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                        ) {
+                                            // Parte clickeable para seleccionar (solo si está descargada)
+                                            Row(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .clickable(enabled = translation.isDownloaded && !isDownloading) {
+                                                        if (translation.isDownloaded) {
+                                                            translationsViewModel.selectTranslation(translation.id)
+                                                            viewModel.changeTranslation(translation.id)
+                                                            onTranslationChanged()
+                                                            scope.launch { translationsSheetState.hide() }
+                                                            showTranslationsSheet = false
+                                                        }
+                                                    },
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(64.dp)
+                                                        .clip(RoundedCornerShape(12.dp))
+                                                        .background(
+                                                            if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                                                            else MaterialTheme.colorScheme.secondaryContainer
+                                                        ),
+                                                    contentAlignment = Alignment.Center,
+                                                ) {
+                                                    Text(
+                                                        translation.shortName.take(4).uppercase(),
+                                                        style = MaterialTheme.typography.labelLarge,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = if (isSelected) MaterialTheme.colorScheme.primary
+                                                        else MaterialTheme.colorScheme.onSecondaryContainer,
+                                                    )
+                                                }
+                                                Column {
+                                                    Text(translation.languageName, style = MaterialTheme.typography.labelSmall)
+                                                    Text(translation.name, style = MaterialTheme.typography.bodyLarge)
+                                                }
+                                            }
+
+                                            // Acciones (descargar / eliminar)
+                                            if (isDownloading) {
+                                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                                            } else if (translation.isDownloaded) {
+                                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                    if (isSelected) {
+                                                        Icon(
+                                                            Icons.Default.CheckCircle,
+                                                            null,
+                                                            tint = MaterialTheme.colorScheme.primary,
+                                                            modifier = Modifier.size(24.dp)
+                                                        )
+                                                    }
+                                                    // Botón de eliminar
+                                                    IconButton(
+                                                        onClick = {
+                                                            translationToDelete = translation
+                                                            showDeleteConfirmDialog = true
+                                                        },
+                                                        modifier = Modifier.size(32.dp)
+                                                    ) {
+                                                        Icon(
+                                                            Icons.Default.Delete,
+                                                            contentDescription = "Eliminar",
+                                                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                                                            modifier = Modifier.size(20.dp)
+                                                        )
+                                                    }
+                                                }
+                                            } else {
+                                                Button(
+                                                    onClick = {
+                                                        selectedTranslationToDownload = translation
+                                                        showConfirmDialog = true
+                                                    },
+                                                    modifier = Modifier.size(width = 80.dp, height = 32.dp),
+                                                    contentPadding = PaddingValues(0.dp)
+                                                ) {
+                                                    Text("Get", fontSize = 12.sp)
+                                                }
+                                            }
+                                        }
+                                        HorizontalDivider(modifier = Modifier.padding(start = 88.dp))
+                                    }
+                                }
+                            }
+                        }
+                        is TranslationsUiState.Error -> {
+                            Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                                Text("Error loading versions", color = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Diálogo de confirmación para eliminar
+            if (showDeleteConfirmDialog && translationToDelete != null) {
+                AlertDialog(
+                    onDismissRequest = {
+                        showDeleteConfirmDialog = false
+                        translationToDelete = null
+                    },
+                    title = { Text("Eliminar versión") },
+                    text = {
+                        Text("¿Estás seguro de que deseas eliminar \"${translationToDelete?.name}\"?\n\nSe eliminará el archivo descargado de tu dispositivo.")
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                translationToDelete?.let { translation ->
+                                    translationsViewModel.deleteTranslation(translation) {
+                                        // La UI se actualizará automáticamente
+                                    }
+                                }
+                                showDeleteConfirmDialog = false
+                                translationToDelete = null
+                            }
+                        ) {
+                            Text("Eliminar", color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = {
+                            showDeleteConfirmDialog = false
+                            translationToDelete = null
+                        }) {
+                            Text("Cancelar")
+                        }
+                    }
+                )
             }
         }
     }
