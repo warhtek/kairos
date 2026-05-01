@@ -3,51 +3,47 @@
     android:id="@+id/widget_container"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@android:drawable/editbox_background"
+    android:background="@drawable/widget_background_rounded"
     android:orientation="vertical"
-    android:padding="12dp">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="8dp">
-
-        <ImageView
-            android:id="@+id/widget_icon"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/ic_logo_kairos" />
-
-        <TextView
-            android:id="@+id/widget_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:text="Kairos"
-            android:textColor="#3B82F6"
-            android:textSize="14sp"
-            android:textStyle="bold" />
-    </LinearLayout>
+    android:padding="16dp">
 
     <TextView
-        android:id="@+id/widget_verse_text"
-        android:layout_width="match_parent"
+        android:id="@+id/widget_title"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Toca para ver el versículo del día"
-        android:textColor="#333333"
-        android:textSize="12sp"
-        android:lineSpacingExtra="2dp"
+        android:text="📖 La Santa Biblia"
+        android:textColor="#3B82F6"
+        android:textSize="14sp"
+        android:textStyle="bold"
         android:layout_marginBottom="4dp" />
+
+    <TextView
+        android:id="@+id/widget_subtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Versículo del día"
+        android:textColor="#666666"
+        android:textSize="11sp"
+        android:layout_marginBottom="12dp" />
 
     <TextView
         android:id="@+id/widget_verse_reference"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text=""
-        android:textColor="#666666"
-        android:textSize="10sp"
-        android:gravity="end" />
+        android:text="Proverbios 3:5"
+        android:textColor="#333333"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/widget_verse_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Pon toda tu esperanza en Dios, y no te apoyes en tu propia inteligencia."
+        android:textColor="#555555"
+        android:textSize="12sp"
+        android:lineSpacingExtra="4dp"
+        android:layout_marginBottom="12dp" />
 
 </LinearLayout>
