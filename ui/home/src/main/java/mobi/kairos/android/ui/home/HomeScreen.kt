@@ -123,15 +123,17 @@ fun HomeScreen(
     Log.d("HomeScreen", "Rendering with params - bookId: $selectedBookId, bookName: $selectedBookName")
 
     var initialNavigationHandled by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     LaunchedEffect(selectedBookId, selectedBookName, selectedChapterNumber, selectedVerseNumber) {
         if (!initialNavigationHandled) {
             if (selectedBookId != null && selectedBookName != null) {
                 viewModel.navigateToBook(
-                    selectedBookId,
-                    selectedBookName,
-                    selectedChapterNumber,
-                    selectedVerseNumber,
+                    context = context,
+                    bookId = selectedBookId,
+                    bookName = selectedBookName,
+                    chapterNumber = selectedChapterNumber,
+                    verseNumber = selectedVerseNumber
                 )
                 onBookSelected()
             } else {
@@ -148,7 +150,6 @@ fun HomeScreen(
         }
     }
 
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
@@ -625,7 +626,13 @@ fun HomeScreen(
                                                                 .clip(RoundedCornerShape(8.dp))
                                                                 .background(MaterialTheme.colorScheme.surfaceVariant),
                                                             onClick = {
-                                                                viewModel.navigateToBook(book.id, book.name, chapter, 1)
+                                                                viewModel.navigateToBook(
+                                                                    context = context,
+                                                                    bookId = book.id,
+                                                                    bookName = book.name,
+                                                                    chapterNumber = chapter,
+                                                                    verseNumber = 1
+                                                                )
                                                                 scope.launch { booksSheetState.hide() }
                                                                 showBooksSheet = false
                                                             }
@@ -886,7 +893,13 @@ fun HomeScreen(
                                     Text(result.verseText, maxLines = 3, overflow = TextOverflow.Ellipsis)
                                     Button(
                                         onClick = {
-                                            viewModel.navigateToBook(result.bookId, result.bookName, result.chapterNumber, result.verseNumber)
+                                            viewModel.navigateToBook(
+                                                context = context,
+                                                bookId = result.bookId,
+                                                bookName = result.bookName,
+                                                chapterNumber = result.chapterNumber,
+                                                verseNumber = result.verseNumber
+                                            )
                                             scope.launch { searchSheetState.hide() }
                                             showSearchSheet = false
                                             searchViewModel.clearResults()
@@ -1018,7 +1031,13 @@ fun HomeScreen(
                         items(favoriteVerses) { favorite ->
                             Card(
                                 modifier = Modifier.fillMaxWidth().clickable {
-                                    viewModel.navigateToBook(favorite.bookId, favorite.bookName, favorite.chapterNumber, favorite.verseNumber)
+                                    viewModel.navigateToBook(
+                                        context = context,
+                                        bookId = favorite.bookId,
+                                        bookName = favorite.bookName,
+                                        chapterNumber = favorite.chapterNumber,
+                                        verseNumber = favorite.verseNumber
+                                    )
                                     showFavoritesSheet = false
                                 },
                                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest),

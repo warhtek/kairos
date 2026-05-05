@@ -15,6 +15,9 @@ class KairosTtsManager private constructor(
 
     private var tts: TextToSpeech? = null
     private var isReady = false
+    private var currentChunks = mutableListOf<String>()
+    private var currentChunkIndex = 0
+    private var isSpeakingChunks = false
 
     var availableVoices: List<Voice> = emptyList()
         private set
@@ -50,9 +53,7 @@ class KairosTtsManager private constructor(
         if (status == TextToSpeech.SUCCESS) {
             tts?.language = Locale("es", "ES")
 
-            // Restaurar configuración guardada
             restoreSavedSettings()
-
             isReady = true
 
             availableVoices = tts?.voices
@@ -63,12 +64,82 @@ class KairosTtsManager private constructor(
                 ?.sortedBy { it.name }
                 ?: emptyList()
 
-            // Restaurar voz guardada si existe
             restoreSavedVoice()
+
+            // Configurar el listener principal
+            setupUtteranceListener()
 
             Log.d("KairosTtsManager", "TTS ready, voices: ${availableVoices.size}")
         } else {
             Log.e("KairosTtsManager", "TTS init failed with status: $status")
+        }
+    }
+
+    private fun setupUtteranceListener() {
+        tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            override fun onStart(utteranceId: String?) {
+                Log.d("KairosTtsManager", "onStart: $utteranceId")
+                isPlaying = true
+                onPlayingChanged?.invoke(true)
+            }
+
+            override fun onDone(utteranceId: String?) {
+                Log.d("KairosTtsManager", "onDone: $utteranceId")
+
+                // Si estamos reproduciendo chunks, pasar al siguiente
+                if (isSpeakingChunks) {
+                    currentChunkIndex++
+                    if (currentChunkIndex < currentChunks.size) {
+                        speakCurrentChunk()
+                    } else {
+                        // Terminaron todos los chunks
+                        isSpeakingChunks = false
+                        isPlaying = false
+                        currentChunks.clear()
+                        currentChunkIndex = 0
+                        onPlayingChanged?.invoke(false)
+                        onRangeStart?.invoke(-1, -1)
+                    }
+                } else {
+                    isPlaying = false
+                    onPlayingChanged?.invoke(false)
+                    onRangeStart?.invoke(-1, -1)
+                }
+            }
+
+            override fun onError(utteranceId: String?) {
+                Log.e("KairosTtsManager", "onError (1 param): $utteranceId")
+                handlePlaybackError()
+            }
+
+            override fun onError(utteranceId: String?, errorCode: Int) {
+                Log.e("KairosTtsManager", "onError (2 params): $utteranceId, code=$errorCode")
+                handlePlaybackError()
+            }
+
+            override fun onRangeStart(utteranceId: String?, start: Int, end: Int, frame: Int) {
+                onRangeStart?.invoke(start, end)
+            }
+        })
+    }
+
+    private fun handlePlaybackError() {
+        if (isSpeakingChunks) {
+            currentChunkIndex++
+            if (currentChunkIndex < currentChunks.size) {
+                speakCurrentChunk()
+            } else {
+                isSpeakingChunks = false
+                isPlaying = false
+                currentChunks.clear()
+                currentChunkIndex = 0
+                onPlayingChanged?.invoke(false)
+                onRangeStart?.invoke(-1, -1)
+            }
+        } else {
+            isPlaying = false
+            onPlayingChanged?.invoke(false)
+            onRangeStart?.invoke(-1, -1)
         }
     }
 
@@ -92,11 +163,78 @@ class KairosTtsManager private constructor(
         }
     }
 
+    private fun splitTextIntoChunks(text: String, maxChunkSize: Int = 500): List<String> {
+        val chunks = mutableListOf<String>()
+
+        val sentences = text.split(Regex("(?<=[.!?;])\\s+"))
+        var currentChunk = StringBuilder()
+
+        for (sentence in sentences) {
+            if (currentChunk.length + sentence.length + 1 <= maxChunkSize) {
+                if (currentChunk.isNotEmpty()) currentChunk.append(" ")
+                currentChunk.append(sentence)
+            } else {
+                if (currentChunk.isNotEmpty()) {
+                    chunks.add(currentChunk.toString())
+                }
+                if (sentence.length > maxChunkSize) {
+                    val words = sentence.split(" ")
+                    var wordChunk = StringBuilder()
+                    for (word in words) {
+                        if (wordChunk.length + word.length + 1 <= maxChunkSize) {
+                            if (wordChunk.isNotEmpty()) wordChunk.append(" ")
+                            wordChunk.append(word)
+                        } else {
+                            if (wordChunk.isNotEmpty()) {
+                                chunks.add(wordChunk.toString())
+                            }
+                            wordChunk = StringBuilder(word)
+                        }
+                    }
+                    if (wordChunk.isNotEmpty()) {
+                        chunks.add(wordChunk.toString())
+                    }
+                    currentChunk = StringBuilder()
+                } else {
+                    currentChunk = StringBuilder(sentence)
+                }
+            }
+        }
+        if (currentChunk.isNotEmpty()) {
+            chunks.add(currentChunk.toString())
+        }
+
+        if (chunks.isEmpty() && text.isNotEmpty()) {
+            chunks.add(text)
+        }
+
+        Log.d("KairosTtsManager", "Split text into ${chunks.size} chunks")
+        return chunks
+    }
+
+    private fun speakCurrentChunk() {
+        if (currentChunkIndex >= currentChunks.size) {
+            isSpeakingChunks = false
+            isPlaying = false
+            currentChunks.clear()
+            currentChunkIndex = 0
+            onPlayingChanged?.invoke(false)
+            onRangeStart?.invoke(-1, -1)
+            return
+        }
+
+        val chunk = currentChunks[currentChunkIndex]
+        val utteranceId = "kairos_chunk_${currentChunkIndex}_${System.currentTimeMillis()}"
+        Log.d("KairosTtsManager", "Speaking chunk ${currentChunkIndex + 1}/${currentChunks.size}")
+
+        tts?.speak(chunk, TextToSpeech.QUEUE_ADD, null, utteranceId)
+    }
+
     fun speak(text: String) {
         Log.d("KairosTtsManager", "speak called, isReady=$isReady, text length=${text.length}")
 
         if (!isReady) {
-            Log.w("KairosTtsManager", "TTS not ready, cannot speak")
+            Log.e("KairosTtsManager", "TTS not ready, cannot speak")
             return
         }
 
@@ -105,53 +243,31 @@ class KairosTtsManager private constructor(
             return
         }
 
+        // Detener cualquier reproducción en curso
         stop()
 
-        tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-            override fun onStart(utteranceId: String?) {
-                Log.d("KairosTtsManager", "onStart: $utteranceId")
-                isPlaying = true
-                onPlayingChanged?.invoke(true)
+        // Si el texto es largo, dividirlo en chunks
+        if (text.length > 500) {
+            currentChunks = splitTextIntoChunks(text).toMutableList()
+            currentChunkIndex = 0
+            isSpeakingChunks = true
+
+            if (currentChunks.isNotEmpty()) {
+                speakCurrentChunk()
+            } else {
+                Log.e("KairosTtsManager", "No chunks to speak")
             }
-
-            override fun onDone(utteranceId: String?) {
-                Log.d("KairosTtsManager", "onDone: $utteranceId")
-                isPlaying = false
-                onPlayingChanged?.invoke(false)
-                onRangeStart?.invoke(-1, -1)
-            }
-
-            // Método onError con 1 parámetro (versiones antiguas)
-            override fun onError(utteranceId: String?) {
-                Log.e("KairosTtsManager", "onError (1 param): $utteranceId")
-                isPlaying = false
-                onPlayingChanged?.invoke(false)
-                onRangeStart?.invoke(-1, -1)
-            }
-
-            // Método onError con 2 parámetros (versiones nuevas)
-            override fun onError(utteranceId: String?, errorCode: Int) {
-                Log.e("KairosTtsManager", "onError (2 params): $utteranceId, code=$errorCode")
-                isPlaying = false
-                onPlayingChanged?.invoke(false)
-                onRangeStart?.invoke(-1, -1)
-            }
-
-            override fun onRangeStart(utteranceId: String?, start: Int, end: Int, frame: Int) {
-                Log.d("KairosTtsManager", "onRangeStart: start=$start, end=$end")
-                onRangeStart?.invoke(start, end)
-            }
-        })
-
-        val utteranceId = "kairos_utterance_${System.currentTimeMillis()}"
-        val result = tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
-
-        if (result == TextToSpeech.SUCCESS) {
-            Log.d("KairosTtsManager", "Speak started successfully")
         } else {
-            Log.e("KairosTtsManager", "Speak failed with result: $result")
-            isPlaying = false
-            onPlayingChanged?.invoke(false)
+            // Texto corto, hablar directamente
+            isSpeakingChunks = false
+            val utteranceId = "kairos_utterance_${System.currentTimeMillis()}"
+            val result = tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
+
+            if (result != TextToSpeech.SUCCESS) {
+                Log.e("KairosTtsManager", "Speak failed with result: $result")
+                isPlaying = false
+                onPlayingChanged?.invoke(false)
+            }
         }
     }
 
@@ -159,6 +275,9 @@ class KairosTtsManager private constructor(
         Log.d("KairosTtsManager", "stop called")
         tts?.stop()
         isPlaying = false
+        isSpeakingChunks = false
+        currentChunks.clear()
+        currentChunkIndex = 0
         onPlayingChanged?.invoke(false)
         onRangeStart?.invoke(-1, -1)
     }
@@ -167,19 +286,19 @@ class KairosTtsManager private constructor(
         currentVoice = voice
         tts?.voice = voice
         preferencesRepo.saveSelectedVoice(voice.name)
-        Log.d("KairosTtsManager", "Voice set to: ${voice.name} and saved")
+        Log.d("KairosTtsManager", "Voice set to: ${voice.name}")
     }
 
     fun setSpeechRate(rate: Float) {
         tts?.setSpeechRate(rate)
         preferencesRepo.saveSpeechRate(rate)
-        Log.d("KairosTtsManager", "Speech rate set to: $rate and saved")
+        Log.d("KairosTtsManager", "Speech rate set to: $rate")
     }
 
     fun setPitch(pitch: Float) {
         tts?.setPitch(pitch)
         preferencesRepo.savePitch(pitch)
-        Log.d("KairosTtsManager", "Pitch set to: $pitch and saved")
+        Log.d("KairosTtsManager", "Pitch set to: $pitch")
     }
 
     fun shutdown() {

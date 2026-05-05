@@ -147,8 +147,18 @@ class HomeViewModel(
     private var currentSpeakText: String = ""
 
     fun speakCurrentChapter() {
+        Log.d("HomeViewModel", "speakCurrentChapter called - verses size: ${verses.size}, ttsManager: ${ttsManager != null}, isReady: ${ttsManager?.isReady()}")
         if (verses.isEmpty()) {
             Log.w("HomeViewModel", "No verses to speak")
+            return
+        }
+        if (ttsManager == null) {
+            Log.e("HomeViewModel", "TTS Manager is null!")
+            return
+        }
+
+        if (ttsManager?.isReady() != true) {
+            Log.e("HomeViewModel", "TTS is not ready!")
             return
         }
         currentSpeakText = buildString {
@@ -346,7 +356,7 @@ class HomeViewModel(
         }
     }
 
-    fun navigateToBook(bookId: String, bookName: String, chapterNumber: Int, verseNumber: Int) {
+    fun navigateToBook(context: Context, bookId: String, bookName: String, chapterNumber: Int, verseNumber: Int) {
         viewModelScope.launch {
             isNavigatingFromSplash = true
             isInitialLoadCompleted = true
@@ -354,6 +364,10 @@ class HomeViewModel(
             currentBookName = bookName
             currentChapterNumber = chapterNumber
             lastReadVerseNumber = verseNumber
+
+            // Asegurar que TTS esté listo ANTES de cargar el capítulo
+            ensureTtsReadyForNavigation(context)
+
             loadChapter()
         }
     }
@@ -560,6 +574,26 @@ class HomeViewModel(
         } catch (e: Exception) {
             android.util.Log.e("HomeViewModel", "Error searching local Bible", e)
             ""
+        }
+    }
+
+    fun ensureTtsReadyForNavigation(context: Context) {
+        if (ttsManager == null) {
+            initTts(context)
+        } else if (ttsManager?.isReady() == false) {
+            viewModelScope.launch {
+                var attempts = 0
+                while (ttsManager?.isReady() == false && attempts < 20) {
+                    delay(500)
+                    attempts++
+                }
+                if (ttsManager?.isReady() == true) {
+                    Log.d("HomeViewModel", "TTS ready after waiting")
+                } else {
+                    Log.w("HomeViewModel", "TTS not ready after waiting, reinitializing")
+                    restartTts(context)
+                }
+            }
         }
     }
 
