@@ -11,6 +11,8 @@
 package mobi.kairos.android
 
 import android.app.Application
+import android.content.res.Configuration
+import android.util.Log
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -25,12 +27,37 @@ import mobi.kairos.android.ui.translations.translationsModule
 
 
 class MainApplication : Application() {
+
+    companion object {
+        private var instance: MainApplication? = null
+
+        fun getInstance(): MainApplication? = instance
+    }
+
     override fun onCreate() {
         super.onCreate()
+        instance = this
+
         startKoin {
             androidLogger()
             androidContext(this@MainApplication)
-            modules(appModule,dataModule,domainModule, homeModule,booksModule,splashModule, searchModule, translationsModule)
+            modules(
+                appModule,
+                dataModule,
+                domainModule,
+                homeModule,
+                booksModule,
+                splashModule,
+                searchModule,
+                translationsModule
+            )
         }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        Log.d("MainApplication", "Configuration changed: ${newConfig.locale?.displayName}")
+        // Notificar a los componentes que el idioma ha cambiado
+        // El refresco del TTS se maneja en MainActivity
     }
 }

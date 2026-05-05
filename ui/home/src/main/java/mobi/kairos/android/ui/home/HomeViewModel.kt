@@ -596,6 +596,16 @@ class HomeViewModel(
             }
         }
     }
+    fun refreshTtsLanguage() {
+        ttsManager?.refreshLanguage()
+        // Actualizar la lista de voces disponibles
+        ttsManager?.let {
+            _ttsState.value = _ttsState.value.copy(
+                availableVoices = it.availableVoices,
+                currentVoice = it.currentVoice
+            )
+        }
+    }
 
 }
 

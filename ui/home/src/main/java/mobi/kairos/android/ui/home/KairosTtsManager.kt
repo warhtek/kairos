@@ -18,6 +18,7 @@ class KairosTtsManager private constructor(
     private var currentChunks = mutableListOf<String>()
     private var currentChunkIndex = 0
     private var isSpeakingChunks = false
+    private var currentAppLanguage: String = "es" // Idioma actual de la app
 
     var availableVoices: List<Voice> = emptyList()
         private set
@@ -51,18 +52,16 @@ class KairosTtsManager private constructor(
     override fun onInit(status: Int) {
         Log.d("KairosTtsManager", "onInit called with status: $status")
         if (status == TextToSpeech.SUCCESS) {
-            tts?.language = Locale("es", "ES")
+            // Obtener el idioma actual del dispositivo/configuración
+            val currentLocale = getCurrentLocale()
+            tts?.language = currentLocale
+            Log.d("KairosTtsManager", "TTS language set to: ${currentLocale.displayName}")
 
             restoreSavedSettings()
             isReady = true
 
-            availableVoices = tts?.voices
-                ?.filter { voice ->
-                    !voice.isNetworkConnectionRequired &&
-                        (voice.locale.language == "es" || voice.locale.language == "spa")
-                }
-                ?.sortedBy { it.name }
-                ?: emptyList()
+            // Cargar todas las voces disponibles sin filtrar por idioma
+            loadAvailableVoices()
 
             restoreSavedVoice()
 
@@ -73,6 +72,36 @@ class KairosTtsManager private constructor(
         } else {
             Log.e("KairosTtsManager", "TTS init failed with status: $status")
         }
+    }
+
+    private fun getCurrentLocale(): Locale {
+        // Obtener el idioma actual del sistema/dispositivo
+        val currentLocale = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            context.resources.configuration.locales[0]
+        } else {
+            context.resources.configuration.locale
+        }
+
+        // Si el idioma es español, usar español de España por defecto
+        return if (currentLocale.language == "es") {
+            Locale("es", "ES")
+        } else {
+            currentLocale
+        }
+    }
+
+    private fun loadAvailableVoices() {
+        val allVoices = tts?.voices ?: emptyList()
+
+        // Obtener el idioma actual para priorizar
+        val currentLanguage = getCurrentLocale().language
+
+        // Ordenar voces: primero las del idioma actual, luego el resto
+        availableVoices = allVoices.sortedWith(compareBy<Voice> {
+            !it.locale.language.equals(currentLanguage, ignoreCase = true)
+        }.thenBy { it.name })
+
+        Log.d("KairosTtsManager", "Available voices: ${availableVoices.map { "${it.name} (${it.locale.displayName})" }}")
     }
 
     private fun setupUtteranceListener() {
@@ -86,13 +115,11 @@ class KairosTtsManager private constructor(
             override fun onDone(utteranceId: String?) {
                 Log.d("KairosTtsManager", "onDone: $utteranceId")
 
-                // Si estamos reproduciendo chunks, pasar al siguiente
                 if (isSpeakingChunks) {
                     currentChunkIndex++
                     if (currentChunkIndex < currentChunks.size) {
                         speakCurrentChunk()
                     } else {
-                        // Terminaron todos los chunks
                         isSpeakingChunks = false
                         isPlaying = false
                         currentChunks.clear()
@@ -243,10 +270,8 @@ class KairosTtsManager private constructor(
             return
         }
 
-        // Detener cualquier reproducción en curso
         stop()
 
-        // Si el texto es largo, dividirlo en chunks
         if (text.length > 500) {
             currentChunks = splitTextIntoChunks(text).toMutableList()
             currentChunkIndex = 0
@@ -258,7 +283,6 @@ class KairosTtsManager private constructor(
                 Log.e("KairosTtsManager", "No chunks to speak")
             }
         } else {
-            // Texto corto, hablar directamente
             isSpeakingChunks = false
             val utteranceId = "kairos_utterance_${System.currentTimeMillis()}"
             val result = tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
@@ -309,4 +333,15 @@ class KairosTtsManager private constructor(
     }
 
     fun isReady(): Boolean = isReady
+
+    // Método para refrescar el idioma cuando cambia la configuración de la app
+    fun refreshLanguage() {
+        if (isReady) {
+            val currentLocale = getCurrentLocale()
+            tts?.language = currentLocale
+            loadAvailableVoices()
+            restoreSavedVoice()
+            Log.d("KairosTtsManager", "Language refreshed to: ${currentLocale.displayName}")
+        }
+    }
 }
