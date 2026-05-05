@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="splash_title">LA SANTA BIBLIA</string>
+    <string name="splash_verse_of_day">Versículo del día</string>
+    <string name="splash_open_bible">Abrir Biblia</string>
+    <string name="splash_share_verse">Compartir versículo</string>
+    <string name="splash_loading">Cargando versículo...</string>
+    <string name="splash_error">No se pudo cargar el versículo</string>
+    <string name="splash_continue">Continuar</string>
+    <string name="app_name">app_name</string>
+</resources>

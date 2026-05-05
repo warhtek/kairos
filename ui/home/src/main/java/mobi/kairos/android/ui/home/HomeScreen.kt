@@ -5,6 +5,7 @@ package mobi.kairos.android.ui.home
 
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,9 +30,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowCircleDown
 import androidx.compose.material.icons.filled.ArrowCircleUp
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.QuestionAnswer
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
@@ -46,6 +51,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -71,10 +77,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
@@ -94,16 +102,6 @@ import mobi.kairos.android.ui.translations.TranslationsViewModel
 import mobi.kairos.android.ui.translations.TranslationsUiState
 import mobi.kairos.android.ui.translations.TranslationItem
 import org.koin.androidx.compose.koinViewModel
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.QuestionAnswer
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.AlertDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -153,7 +151,6 @@ fun HomeScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // Unificar la inicialización
     LaunchedEffect(Unit) {
         translationsViewModel.setContext(context)
         viewModel.initTts(context)
@@ -190,21 +187,17 @@ fun HomeScreen(
     var showDailyVerseSheet by remember { mutableStateOf(false) }
     var showFavoritesSheet by remember { mutableStateOf(false) }
 
-    // Diálogo de confirmación para descarga
     var showConfirmDialog by remember { mutableStateOf(false) }
     var selectedTranslationToDownload by remember { mutableStateOf<TranslationItem?>(null) }
 
-    // Diálogo de confirmación para eliminar favorito
     var showDeleteFavoriteDialog by remember { mutableStateOf(false) }
     var favoriteToDelete by remember { mutableStateOf<FavoriteVerse?>(null) }
 
-
-    // Diálogo de confirmación para descarga
     if (showConfirmDialog && selectedTranslationToDownload != null) {
         AlertDialog(
             onDismissRequest = { showConfirmDialog = false },
-            title = { Text("Descargar ${selectedTranslationToDownload?.name}") },
-            text = { Text("¿Deseas descargar esta versión de la Biblia?\n\nSe guardará en tu dispositivo.") },
+            title = { Text(stringResource(R.string.translations_confirm_download_title, selectedTranslationToDownload?.name ?: "")) },
+            text = { Text(stringResource(R.string.translations_confirm_download_message)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -218,24 +211,23 @@ fun HomeScreen(
                             }
                         }
                     }
-                ) { Text("Descargar") }
+                ) { Text(stringResource(R.string.translations_download)) }
             },
             dismissButton = {
-                TextButton(onClick = { showConfirmDialog = false }) { Text("Cancelar") }
+                TextButton(onClick = { showConfirmDialog = false }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
 
-    // Diálogo de confirmación para eliminar favorito
     if (showDeleteFavoriteDialog && favoriteToDelete != null) {
         AlertDialog(
             onDismissRequest = {
                 showDeleteFavoriteDialog = false
                 favoriteToDelete = null
             },
-            title = { Text("Eliminar favorito") },
+            title = { Text(stringResource(R.string.favorites_remove_confirm_title)) },
             text = {
-                Text("¿Estás seguro de que deseas eliminar este versículo de tus favoritos?\n\n${favoriteToDelete?.bookName} ${favoriteToDelete?.chapterNumber}:${favoriteToDelete?.verseNumber}")
+                Text(stringResource(R.string.favorites_remove_confirm_message) + "\n\n${favoriteToDelete?.bookName} ${favoriteToDelete?.chapterNumber}:${favoriteToDelete?.verseNumber}")
             },
             confirmButton = {
                 TextButton(
@@ -244,7 +236,7 @@ fun HomeScreen(
                         showDeleteFavoriteDialog = false
                         favoriteToDelete = null
                     }
-                ) { Text("Eliminar", color = MaterialTheme.colorScheme.error) }
+                ) { Text(stringResource(R.string.favorites_remove), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
                 TextButton(
@@ -252,7 +244,7 @@ fun HomeScreen(
                         showDeleteFavoriteDialog = false
                         favoriteToDelete = null
                     }
-                ) { Text("Cancelar") }
+                ) { Text(stringResource(R.string.favorites_cancel)) }
             }
         )
     }
@@ -290,7 +282,7 @@ fun HomeScreen(
                                             Row(verticalAlignment = Alignment.CenterVertically) {
                                                 Icon(
                                                     imageVector = Icons.Default.SkipPrevious,
-                                                    contentDescription = "Previous",
+                                                    contentDescription = stringResource(R.string.home_previous),
                                                     modifier = Modifier.size(24.dp),
                                                     tint = if (currentUiState.hasPrevious) MaterialTheme.colorScheme.onSurface
                                                     else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
@@ -314,7 +306,7 @@ fun HomeScreen(
                                         ) {
                                             Icon(
                                                 imageVector = if (ttsState.isPlaying) Icons.Default.Stop else Icons.Default.PlayArrow,
-                                                contentDescription = if (ttsState.isPlaying) "Stop" else "Play",
+                                                contentDescription = if (ttsState.isPlaying) stringResource(R.string.home_stop) else stringResource(R.string.home_play),
                                                 modifier = Modifier.size(20.dp)
                                             )
                                         }
@@ -331,7 +323,7 @@ fun HomeScreen(
                                                 )
                                                 Icon(
                                                     imageVector = Icons.Default.SkipNext,
-                                                    contentDescription = "Next",
+                                                    contentDescription = stringResource(R.string.home_next),
                                                     modifier = Modifier.size(24.dp),
                                                     if (currentUiState.hasNext) MaterialTheme.colorScheme.onSurface
                                                     else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
@@ -342,14 +334,14 @@ fun HomeScreen(
                                     Spacer(modifier = Modifier.width(0.dp))
                                 }
                             }
-                            else -> Text("KAIROS")
+                            else -> Text(stringResource(R.string.app_name))
                         }
                     },
                     actions = {
                         val currentUiState = uiState
                         if (currentUiState is HomeUiState.Success) {
                             IconButton(onClick = { showFavoritesSheet = true }) {
-                                Icon(Icons.Filled.Favorite, contentDescription = "Favorites")
+                                Icon(Icons.Filled.Favorite, contentDescription = stringResource(R.string.home_favorites))
                             }
                             Clickable(onClick = { showTranslationsSheet = true }) {
                                 Text(
@@ -365,7 +357,7 @@ fun HomeScreen(
                                 )
                             }
                             IconButton(onClick = { showSearchSheet = true }) {
-                                Icon(Icons.Default.Search, contentDescription = "Search")
+                                Icon(Icons.Default.Search, contentDescription = stringResource(R.string.home_search))
                             }
                         }
                     },
@@ -402,7 +394,7 @@ fun HomeScreen(
                         .background(MaterialTheme.colorScheme.surfaceVariant),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("Advertisement", style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(R.string.advertisement), style = MaterialTheme.typography.labelSmall)
                 }
                 HorizontalDivider()
                 Row(
@@ -413,34 +405,36 @@ fun HomeScreen(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                         IconButton(onClick = { showSearchSheet = true }) { Icon(Icons.Default.Search, null) }
-                        Text("Search", style = MaterialTheme.typography.labelSmall)
+                        Text(stringResource(R.string.home_nav_search), style = MaterialTheme.typography.labelSmall)
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                         IconButton(onClick = { showBooksSheet = true }) { Icon(Icons.Default.MenuBook, null) }
-                        Text("Books", style = MaterialTheme.typography.labelSmall)
+                        Text(stringResource(R.string.home_nav_books), style = MaterialTheme.typography.labelSmall)
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                         IconButton(onClick = { showDailyVerseSheet = true }) { Icon(Icons.Default.Today, null) }
-                        Text("Today", style = MaterialTheme.typography.labelSmall)
+                        Text(stringResource(R.string.home_nav_today), style = MaterialTheme.typography.labelSmall)
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                         IconButton(onClick = { showTranslationsSheet = true }) { Icon(Icons.Default.Translate, null) }
-                        Text("Version", style = MaterialTheme.typography.labelSmall)
+                        Text(stringResource(R.string.home_nav_version), style = MaterialTheme.typography.labelSmall)
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                         IconButton(onClick = { showVoiceSheet = true }) { Icon(Icons.Default.VolumeUp, null) }
-                        Text("Voice", style = MaterialTheme.typography.labelSmall)
+                        Text(stringResource(R.string.home_nav_voice), style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }
         },
     ) { innerPadding ->
-// ✅ Código correcto
         Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
             val currentUiState = uiState
             when (currentUiState) {
                 is HomeUiState.Loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                is HomeUiState.Empty -> Text("No verses available", modifier = Modifier.align(Alignment.Center).padding(24.dp))
+                is HomeUiState.Empty -> Text(
+                    stringResource(R.string.no_verses_available),
+                    modifier = Modifier.align(Alignment.Center).padding(24.dp)
+                )
                 is HomeUiState.Success -> ChapterContent(
                     verses = currentUiState.verses,
                     scrollToVerse = currentUiState.scrollToVerse,
@@ -452,7 +446,10 @@ fun HomeScreen(
                     highlightStart = ttsState.highlightStart,
                     highlightEnd = ttsState.highlightEnd,
                 )
-                is HomeUiState.Error -> Text("Error: ${currentUiState.message}", modifier = Modifier.align(Alignment.Center).padding(24.dp))
+                is HomeUiState.Error -> Text(
+                    "${stringResource(R.string.error)}: ${currentUiState.message}",
+                    modifier = Modifier.align(Alignment.Center).padding(24.dp)
+                )
             }
 
             val showChat by viewModel.showChatScreen.collectAsStateWithLifecycle()
@@ -469,7 +466,6 @@ fun HomeScreen(
                     )
                 }
             }
-            // FAB solo visible cuando el chat NO está abierto
             if (!showChat) {
                 FloatingActionButton(
                     onClick = { viewModel.toggleChatScreen() },
@@ -478,10 +474,9 @@ fun HomeScreen(
                         .align(Alignment.BottomEnd),
                     containerColor = MaterialTheme.colorScheme.primary
                 ) {
-                    Icon(Icons.Default.QuestionAnswer, contentDescription = "Chat IA")
+                    Icon(Icons.Default.QuestionAnswer, contentDescription = stringResource(R.string.chat_ai))
                 }
             }
-        
         }
     }
 
@@ -497,14 +492,14 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .padding(24.dp)
                     .padding(bottom = 32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,  // ← Centrar horizontalmente
+                horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Verso del Día",
+                    text = stringResource(R.string.daily_verse_title),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center  // ← Centrar texto
+                    textAlign = TextAlign.Center
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -523,7 +518,6 @@ fun HomeScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            // Referencia del versículo
                             Text(
                                 text = "${state.verse.bookName} ${state.verse.chapterNumber}:${state.verse.verseNumber}",
                                 style = MaterialTheme.typography.titleMedium,
@@ -535,7 +529,6 @@ fun HomeScreen(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            // Texto del versículo
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = CardDefaults.cardColors(
@@ -556,7 +549,6 @@ fun HomeScreen(
 
                             Spacer(modifier = Modifier.height(24.dp))
 
-                            // Botón para ir al versículo
                             Button(
                                 onClick = {
                                     onNavigateToSplash()
@@ -565,13 +557,13 @@ fun HomeScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
-                                Text("Ver en la Biblia")
+                                Text(stringResource(R.string.daily_verse_go_to_bible))
                             }
                         }
                     }
                     else -> {
                         Text(
-                            text = "No disponible",
+                            text = stringResource(R.string.daily_verse_not_available),
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -592,10 +584,10 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    TextButton(onClick = { showBooksSheet = false }) { Text("Cancel") }
-                    Text("Books", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    TextButton(onClick = { showBooksSheet = false }) { Text(stringResource(R.string.home_books_cancel)) }
+                    Text(stringResource(R.string.home_books_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     TextButton(onClick = { sortAlphabetically = !sortAlphabetically }) {
-                        Text(if (sortAlphabetically) "Traditional" else "Alphabetical")
+                        Text(if (sortAlphabetically) stringResource(R.string.home_books_traditional) else stringResource(R.string.home_books_alphabetical))
                     }
                 }
                 HorizontalDivider()
@@ -658,13 +650,12 @@ fun HomeScreen(
         }
     }
 
-// Translations bottom sheet
+    // Translations bottom sheet
     if (showTranslationsSheet) {
         val uiStateValue by translationsViewModel.uiState.collectAsStateWithLifecycle()
         val downloadingId by translationsViewModel.downloadingTranslation.collectAsStateWithLifecycle()
         val selectedId by translationsViewModel.selectedTranslationId.collectAsStateWithLifecycle()
 
-        // Estado para el diálogo de confirmación de eliminación
         var translationToDelete by remember { mutableStateOf<TranslationItem?>(null) }
         var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
@@ -677,8 +668,8 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    TextButton(onClick = { showTranslationsSheet = false }) { Text("Cancel") }
-                    Text("My Versions", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    TextButton(onClick = { showTranslationsSheet = false }) { Text(stringResource(R.string.translations_cancel)) }
+                    Text(stringResource(R.string.translations_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.size(64.dp))
                 }
                 HorizontalDivider()
@@ -693,7 +684,7 @@ fun HomeScreen(
                         val translations = state.translations
                         if (translations.isEmpty()) {
                             Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                                Text("No versions available")
+                                Text(stringResource(R.string.translations_no_versions))
                             }
                         } else {
                             LazyColumn {
@@ -708,7 +699,6 @@ fun HomeScreen(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                     ) {
-                                        // Parte clickeable para seleccionar (solo si está descargada)
                                         Row(
                                             modifier = Modifier
                                                 .weight(1f)
@@ -748,7 +738,6 @@ fun HomeScreen(
                                             }
                                         }
 
-                                        // Acciones (descargar / eliminar)
                                         if (isDownloading) {
                                             CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                                         } else if (translation.isDownloaded) {
@@ -761,7 +750,6 @@ fun HomeScreen(
                                                         modifier = Modifier.size(24.dp)
                                                     )
                                                 }
-                                                // Botón de eliminar
                                                 IconButton(
                                                     onClick = {
                                                         translationToDelete = translation
@@ -771,7 +759,7 @@ fun HomeScreen(
                                                 ) {
                                                     Icon(
                                                         Icons.Default.Delete,
-                                                        contentDescription = "Eliminar",
+                                                        contentDescription = stringResource(R.string.translations_delete),
                                                         tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
                                                         modifier = Modifier.size(20.dp)
                                                     )
@@ -786,7 +774,7 @@ fun HomeScreen(
                                                 modifier = Modifier.size(width = 80.dp, height = 32.dp),
                                                 contentPadding = PaddingValues(0.dp)
                                             ) {
-                                                Text("Get", fontSize = 12.sp)
+                                                Text(stringResource(R.string.translations_get), fontSize = 12.sp)
                                             }
                                         }
                                     }
@@ -797,195 +785,47 @@ fun HomeScreen(
                     }
                     is TranslationsUiState.Error -> {
                         Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                            Text("Error loading versions", color = MaterialTheme.colorScheme.error)
+                            Text(stringResource(R.string.translations_error_loading), color = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
             }
         }
 
-// Translations bottom sheet
-        if (showTranslationsSheet) {
-            val uiStateValue by translationsViewModel.uiState.collectAsStateWithLifecycle()
-            val downloadingId by translationsViewModel.downloadingTranslation.collectAsStateWithLifecycle()
-            val selectedId by translationsViewModel.selectedTranslationId.collectAsStateWithLifecycle()
-
-            // Estado para el diálogo de confirmación de eliminación
-            var translationToDelete by remember { mutableStateOf<TranslationItem?>(null) }
-            var showDeleteConfirmDialog by remember { mutableStateOf(false) }
-
-            ModalBottomSheet(
-                onDismissRequest = { showTranslationsSheet = false },
-                sheetState = translationsSheetState,
-            ) {
-                Column(modifier = Modifier.padding(bottom = 32.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        TextButton(onClick = { showTranslationsSheet = false }) { Text("Cancel") }
-                        Text("My Versions", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.size(64.dp))
-                    }
-                    HorizontalDivider()
-
-                    when (val state = uiStateValue) {
-                        is TranslationsUiState.Loading -> {
-                            Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                                CircularProgressIndicator()
-                            }
-                        }
-                        is TranslationsUiState.Success -> {
-                            val translations = state.translations
-                            if (translations.isEmpty()) {
-                                Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                                    Text("No versions available")
-                                }
-                            } else {
-                                LazyColumn {
-                                    items(translations) { translation ->
-                                        val isSelected = selectedId == translation.id
-                                        val isDownloading = downloadingId == translation.id
-
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(vertical = 12.dp, horizontal = 16.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                        ) {
-                                            // Parte clickeable para seleccionar (solo si está descargada)
-                                            Row(
-                                                modifier = Modifier
-                                                    .weight(1f)
-                                                    .clickable(enabled = translation.isDownloaded && !isDownloading) {
-                                                        if (translation.isDownloaded) {
-                                                            translationsViewModel.selectTranslation(translation.id)
-                                                            viewModel.changeTranslation(translation.id)
-                                                            onTranslationChanged()
-                                                            scope.launch { translationsSheetState.hide() }
-                                                            showTranslationsSheet = false
-                                                        }
-                                                    },
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                            ) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(64.dp)
-                                                        .clip(RoundedCornerShape(12.dp))
-                                                        .background(
-                                                            if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                                                            else MaterialTheme.colorScheme.secondaryContainer
-                                                        ),
-                                                    contentAlignment = Alignment.Center,
-                                                ) {
-                                                    Text(
-                                                        translation.shortName.take(4).uppercase(),
-                                                        style = MaterialTheme.typography.labelLarge,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = if (isSelected) MaterialTheme.colorScheme.primary
-                                                        else MaterialTheme.colorScheme.onSecondaryContainer,
-                                                    )
-                                                }
-                                                Column {
-                                                    Text(translation.languageName, style = MaterialTheme.typography.labelSmall)
-                                                    Text(translation.name, style = MaterialTheme.typography.bodyLarge)
-                                                }
-                                            }
-
-                                            // Acciones (descargar / eliminar)
-                                            if (isDownloading) {
-                                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                                            } else if (translation.isDownloaded) {
-                                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                                    if (isSelected) {
-                                                        Icon(
-                                                            Icons.Default.CheckCircle,
-                                                            null,
-                                                            tint = MaterialTheme.colorScheme.primary,
-                                                            modifier = Modifier.size(24.dp)
-                                                        )
-                                                    }
-                                                    // Botón de eliminar
-                                                    IconButton(
-                                                        onClick = {
-                                                            translationToDelete = translation
-                                                            showDeleteConfirmDialog = true
-                                                        },
-                                                        modifier = Modifier.size(32.dp)
-                                                    ) {
-                                                        Icon(
-                                                            Icons.Default.Delete,
-                                                            contentDescription = "Eliminar",
-                                                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
-                                                            modifier = Modifier.size(20.dp)
-                                                        )
-                                                    }
-                                                }
-                                            } else {
-                                                Button(
-                                                    onClick = {
-                                                        selectedTranslationToDownload = translation
-                                                        showConfirmDialog = true
-                                                    },
-                                                    modifier = Modifier.size(width = 80.dp, height = 32.dp),
-                                                    contentPadding = PaddingValues(0.dp)
-                                                ) {
-                                                    Text("Get", fontSize = 12.sp)
-                                                }
-                                            }
-                                        }
-                                        HorizontalDivider(modifier = Modifier.padding(start = 88.dp))
-                                    }
+        if (showDeleteConfirmDialog && translationToDelete != null) {
+            AlertDialog(
+                onDismissRequest = {
+                    showDeleteConfirmDialog = false
+                    translationToDelete = null
+                },
+                title = { Text(stringResource(R.string.translations_confirm_delete_title)) },
+                text = {
+                    Text(stringResource(R.string.translations_confirm_delete_message, translationToDelete?.name ?: ""))
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            translationToDelete?.let { translation ->
+                                translationsViewModel.deleteTranslation(translation) {
+                                    // La UI se actualizará automáticamente
                                 }
                             }
-                        }
-                        is TranslationsUiState.Error -> {
-                            Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                                Text("Error loading versions", color = MaterialTheme.colorScheme.error)
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Diálogo de confirmación para eliminar
-            if (showDeleteConfirmDialog && translationToDelete != null) {
-                AlertDialog(
-                    onDismissRequest = {
-                        showDeleteConfirmDialog = false
-                        translationToDelete = null
-                    },
-                    title = { Text("Eliminar versión") },
-                    text = {
-                        Text("¿Estás seguro de que deseas eliminar \"${translationToDelete?.name}\"?\n\nSe eliminará el archivo descargado de tu dispositivo.")
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                translationToDelete?.let { translation ->
-                                    translationsViewModel.deleteTranslation(translation) {
-                                        // La UI se actualizará automáticamente
-                                    }
-                                }
-                                showDeleteConfirmDialog = false
-                                translationToDelete = null
-                            }
-                        ) {
-                            Text("Eliminar", color = MaterialTheme.colorScheme.error)
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = {
                             showDeleteConfirmDialog = false
                             translationToDelete = null
-                        }) {
-                            Text("Cancelar")
                         }
+                    ) {
+                        Text(stringResource(R.string.translations_delete), color = MaterialTheme.colorScheme.error)
                     }
-                )
-            }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        showDeleteConfirmDialog = false
+                        translationToDelete = null
+                    }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            )
         }
     }
 
@@ -1002,14 +842,14 @@ fun HomeScreen(
                 modifier = Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Text("Search Verse", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text("Examples: Salmos 3:3, Salmos 3, amor", style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.search_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.search_examples), style = MaterialTheme.typography.bodySmall)
 
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchViewModel.onQueryChanged(it) },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Search by verse, chapter or word...") },
+                    placeholder = { Text(stringResource(R.string.search_placeholder)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(
@@ -1020,7 +860,7 @@ fun HomeScreen(
                 Button(
                     onClick = { searchViewModel.search((uiState as? HomeUiState.Success)?.translationId ?: "spa_bes") },
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("Search") }
+                ) { Text(stringResource(R.string.search_button)) }
 
                 when {
                     isSearching -> Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
@@ -1031,8 +871,8 @@ fun HomeScreen(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
                     ) {
                         Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Verse not found", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
-                            Text("Try: Genesis 1:1, Salmos 23, or a word like 'amor'", style = MaterialTheme.typography.bodySmall)
+                            Text(stringResource(R.string.search_not_found), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.search_try_examples), style = MaterialTheme.typography.bodySmall)
                         }
                     }
                     searchResults.isNotEmpty() -> LazyColumn(
@@ -1052,7 +892,7 @@ fun HomeScreen(
                                             searchViewModel.clearResults()
                                         },
                                         modifier = Modifier.fillMaxWidth(),
-                                    ) { Text("Go to Verse") }
+                                    ) { Text(stringResource(R.string.search_go_to_verse)) }
                                 }
                             }
                         }
@@ -1070,10 +910,10 @@ fun HomeScreen(
             sheetState = voiceSheetState,
         ) {
             Column(modifier = Modifier.padding(bottom = 32.dp)) {
-                Text("Select Voice", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+                Text(stringResource(R.string.voice_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
                 HorizontalDivider()
                 if (ttsState.availableVoices.isEmpty()) {
-                    Text("No voices available", modifier = Modifier.padding(16.dp))
+                    Text(stringResource(R.string.voice_no_voices), modifier = Modifier.padding(16.dp))
                 } else {
                     LazyColumn {
                         items(ttsState.availableVoices) { voice ->
@@ -1097,18 +937,17 @@ fun HomeScreen(
                         context.startActivity(intent)
                         showVoiceSheet = false
                     }
-                ) { Text("+ Install more voices", color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(16.dp)) }
+                ) { Text(stringResource(R.string.voice_install_more), color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(16.dp)) }
 
-                // Controles de velocidad y tono
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Speech Settings", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp))
+                Text(stringResource(R.string.voice_speech_settings), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp))
                 HorizontalDivider()
 
                 var currentRate by remember { mutableStateOf(ttsState.currentRate) }
                 var currentPitch by remember { mutableStateOf(ttsState.currentPitch) }
 
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Velocidad del habla")
+                    Text(stringResource(R.string.voice_speed))
                     Slider(
                         value = currentRate,
                         onValueChange = {
@@ -1120,7 +959,7 @@ fun HomeScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Text("Tono")
+                    Text(stringResource(R.string.voice_pitch))
                     Slider(
                         value = currentPitch,
                         onValueChange = {
@@ -1152,7 +991,7 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Text("My Favorite Verses", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.favorites_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     IconButton(onClick = { showFavoritesSheet = false }) { Icon(Icons.Default.Close, null) }
                 }
                 HorizontalDivider()
@@ -1161,9 +1000,9 @@ fun HomeScreen(
                     Box(modifier = Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             Icon(Icons.Outlined.FavoriteBorder, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
-                            Text("No favorite verses yet", style = MaterialTheme.typography.bodyLarge)
+                            Text(stringResource(R.string.favorites_empty_title), style = MaterialTheme.typography.bodyLarge)
                             Text(
-                                text = "Tap the heart icon next to any verse to add it to your favorites",
+                                text = stringResource(R.string.favorites_empty_message),
                                 style = MaterialTheme.typography.bodySmall,
                                 textAlign = TextAlign.Center,
                                 overflow = TextOverflow.Ellipsis
@@ -1326,7 +1165,7 @@ private fun VerseItem(
         ) {
             Icon(
                 imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                contentDescription = if (isFavorite) "Quitar de favoritos" else "Agregar a favoritos",
+                contentDescription = if (isFavorite) stringResource(R.string.favorites_remove) else stringResource(R.string.home_favorites),
                 tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                 modifier = Modifier.size(28.dp)
             )

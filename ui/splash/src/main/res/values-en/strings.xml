@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="splash_title">THE HOLY BIBLE</string>
+    <string name="splash_verse_of_day">Verse of the day</string>
+    <string name="splash_open_bible">Open Bible</string>
+    <string name="splash_share_verse">Share verse</string>
+    <string name="splash_loading">Loading verse...</string>
+    <string name="splash_error">Could not load verse</string>
+    <string name="splash_continue">Continue</string>
+    <string name="app_name">app_name</string>
+</resources>
