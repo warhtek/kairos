@@ -1095,6 +1095,11 @@ private fun ChapterContent(
 ) {
     val listState = rememberLazyListState()
 
+    // DEBUG: Log cuando cambian los highlights
+    LaunchedEffect(highlightStart, highlightEnd) {
+        Log.d("ChapterContent", "HIGHLIGHT UPDATED: start=$highlightStart, end=$highlightEnd")
+    }
+
     LaunchedEffect(scrollToVerse) {
         val index = verses.indexOfFirst { it.number == scrollToVerse }
         if (index >= 0) listState.animateScrollToItem(index)
@@ -1105,7 +1110,7 @@ private fun ChapterContent(
         verses.map { verse ->
             val text = verse.content.joinToString(" ") { it.toText() }
             val start = offset
-            offset += text.length + 1
+            offset += text.length + 1 // +1 por el espacio entre versículos
             start
         }
     }
@@ -1141,7 +1146,12 @@ private fun VerseItem(
     highlightEnd: Int = -1,
     verseOffset: Int = 0,
 ) {
-    LaunchedEffect(verse.number) { onVisible() }
+    LaunchedEffect(verse.number) {
+        onVisible()
+        if (verse.number == 1) {
+            Log.d("VerseItem", "Verse ${verse.number}: offset=$verseOffset, highlightStart=$highlightStart, highlightEnd=$highlightEnd")
+        }
+    }
 
     val verseText = verse.content.joinToString(" ") { it.toText() }
     val verseStart = verseOffset

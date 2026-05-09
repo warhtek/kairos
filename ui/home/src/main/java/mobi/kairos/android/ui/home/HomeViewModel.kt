@@ -103,6 +103,7 @@ class HomeViewModel(
                 _ttsState.value = _ttsState.value.copy(isPlaying = playing)
             }
             manager.onRangeStart = { start, end ->
+                Log.d("HomeViewModel", "onRangeStart received from TTS: start=$start, end=$end")
                 _ttsState.value = _ttsState.value.copy(
                     highlightStart = start,
                     highlightEnd = end,
@@ -147,7 +148,7 @@ class HomeViewModel(
     private var currentSpeakText: String = ""
 
     fun speakCurrentChapter() {
-        Log.d("HomeViewModel", "speakCurrentChapter called - verses size: ${verses.size}, ttsManager: ${ttsManager != null}, isReady: ${ttsManager?.isReady()}")
+        Log.d("HomeViewModel", "speakCurrentChapter called - verses size: ${verses.size}")
         if (verses.isEmpty()) {
             Log.w("HomeViewModel", "No verses to speak")
             return
@@ -161,13 +162,14 @@ class HomeViewModel(
             Log.e("HomeViewModel", "TTS is not ready!")
             return
         }
-        currentSpeakText = buildString {
-            verses.forEachIndexed { index, verse ->
-                val verseText = verse.content.joinToString(" ") { it.toText() }
-                append(verseText)
-                if (index < verses.lastIndex) append(". ")
-            }
+
+        // Construir el texto EXACTAMENTE igual que en la UI
+        currentSpeakText = verses.joinToString(" ") { verse ->
+            verse.content.joinToString(" ") { it.toText() }
         }
+
+        Log.d("HomeViewModel", "Full text length: ${currentSpeakText.length}")
+
         ttsManager?.speak(currentSpeakText)
     }
 
@@ -365,9 +367,7 @@ class HomeViewModel(
             currentChapterNumber = chapterNumber
             lastReadVerseNumber = verseNumber
 
-            // Asegurar que TTS esté listo ANTES de cargar el capítulo
             ensureTtsReadyForNavigation(context)
-
             loadChapter()
         }
     }
@@ -490,7 +490,6 @@ class HomeViewModel(
         _isChatLoading.value = true
 
         viewModelScope.launch {
-            // Buscar en la Biblia local primero
             val localResults = searchLocalBible(message)
 
             val enhancedMessage = if (localResults.isNotEmpty()) {
@@ -522,12 +521,12 @@ class HomeViewModel(
     fun searchLocalBible(query: String): String {
         return try {
             val translationId = currentTranslationId
-            val bibleFile = java.io.File(context.filesDir, "translations/$translationId.json")
+            val bibleFile = File(context.filesDir, "translations/$translationId.json")
 
             if (!bibleFile.exists()) return ""
 
             val jsonContent = bibleFile.readText()
-            val jsonObject = org.json.JSONObject(jsonContent)
+            val jsonObject = JSONObject(jsonContent)
             val books = jsonObject.getJSONArray("books")
 
             val results = mutableListOf<String>()
@@ -572,7 +571,7 @@ class HomeViewModel(
                 ""
             }
         } catch (e: Exception) {
-            android.util.Log.e("HomeViewModel", "Error searching local Bible", e)
+            Log.e("HomeViewModel", "Error searching local Bible", e)
             ""
         }
     }
@@ -596,9 +595,9 @@ class HomeViewModel(
             }
         }
     }
+
     fun refreshTtsLanguage() {
         ttsManager?.refreshLanguage()
-        // Actualizar la lista de voces disponibles
         ttsManager?.let {
             _ttsState.value = _ttsState.value.copy(
                 availableVoices = it.availableVoices,
